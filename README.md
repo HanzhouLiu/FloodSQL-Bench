@@ -124,7 +124,8 @@ LLM-Agent Execution and Evaluation
 
 - In addition, our evaluation protocol is based on embedding-based similarity, which provides a straightforward but imperfect approximation for SQL evaluation. Moreover, since the embedding models are accessed via external APIs, there is a potential risk of timeout-related failures. Although we did not observe such issues during our experiments, they remain a possible source of uncertainty.
 
-If you would like to use our benchmark in your work, please cite this paper as follows,
+### 🥰 Citation
+Please cite us if our work is useful for your research.
 ```
 @misc{liu2025floodsqlbenchretrievalaugmentedbenchmarkgeospatiallygrounded,
       title={FloodSQL-Bench: A Retrieval-Augmented Benchmark for Geospatially-Grounded Text-to-SQL}, 
