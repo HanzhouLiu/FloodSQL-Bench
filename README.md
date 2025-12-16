@@ -116,11 +116,13 @@ Dataset Quality & Coverage
 - Since our codes are based on LLM-Agent API, the returned null results might be caused by multiple reasons. These null values might to some extent affect the metric score.
 - There might be some duplicate questions.
 
-LLM-Agent Execution Behavior
+LLM-Agent Execution and Evaluation
 
 - Our pipeline uses an LLM-Agent–based system. As a result, some returned null results may originate from model hallucination, API timeout, agent routing errors, or incomplete tool invocation. We have not investigated the root cause. Any finding about it would be appreciated.
 
 - These null outputs may introduce noise in evaluation metrics. Deepseek-r1-1.5b is such an example. We label the models with such issues with a symbol *. 
+
+- In addition, our evaluation protocol is based on embedding-based similarity, which provides a straightforward but imperfect approximation for SQL evaluation. Moreover, since the embedding models are accessed via external APIs, there is a potential risk of timeout-related failures. Although we did not observe such issues during our experiments, they remain a possible source of uncertainty.
 
 If you would like to use our benchmark in your work, please cite this paper as follows,
 ```
