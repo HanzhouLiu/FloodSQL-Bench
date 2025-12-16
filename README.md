@@ -35,6 +35,14 @@ python scripts/preview/census_tracts.py
 
 # generate metadata
 python scripts/generate_metadata.py
+
+# debug benchmark without llm agents
+python benchmark/single_table/run_50.py
+
+# run and evaluate llm agent on FloodSQL
+# you might want to modify the input/output file name/path in the codes
+python scripts/run_and_eval/run.py
+python scripts/run_and_eval/eval.py
 ```
 ## 📥 Dataset Download
 
