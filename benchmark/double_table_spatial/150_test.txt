@@ -1,0 +1,1051 @@
+================================================================================
+[L2_0001] How many census_tracts in Duval County, FL (identified by GEOID starting with 12031) intersect floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.GEOID LIKE '12031%' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.964 sec)
+  219
+================================================================================
+[L2_0002] How many schools in San Antonio, TX (identified by CITY = 'SAN ANTONIO' and STATEFP = '48') fall inside floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN floodplain b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP = '48' AND a.CITY = 'SAN ANTONIO' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.491 sec)
+  668
+================================================================================
+[L2_0003] Which census_tract in Hillsborough County, FL (identified by STATEFP = '12' and COUNTYFP = '057') has the largest total overlap area with all zcta polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tracts_id FROM census_tracts a JOIN zcta b ON ST_Overlaps(a.geometry, b.geometry) WHERE a.STATEFP = '12' AND a.COUNTYFP = '057' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry, b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 0.453 sec)
+  12057013903
+================================================================================
+[L2_0004] Top 1 census_tract in Austin, TX (identified by CITY = 'AUSTIN' and STATEFP = '48') by number of schools located within it (return the 11-digit GEOID only).
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tracts_id FROM census_tracts b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.STATEFP = '48' AND a.CITY = 'AUSTIN' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.231 sec)
+  48453002411
+================================================================================
+[L2_0005] Top 1 census_tract in Orleans Parish, LA (identified by COUNTYFIPS = '071') by number of hospitals located within it (return the 11-digit GEOID only).
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tracts_id FROM census_tracts b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.COUNTYFIPS = '22071' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.224 sec)
+  22071009900
+================================================================================
+[L2_0006] In Galveston County, TX (identified by COUNTYFP = '167' and STATEFP = '48'), which FEMA Flood Hazard Zone (excluding 'X' and 'AREA NOT INCLUDED') has the most census_tracts intersecting floodplain polygons? Return its FLD_ZONE code.
+--------------------------------------------------------------------------------
+SELECT b.FLD_ZONE FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='167' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) AND b.FLD_ZONE IS NOT NULL AND b.FLD_ZONE NOT IN ('X','AREA NOT INCLUDED') GROUP BY b.FLD_ZONE ORDER BY COUNT(DISTINCT a.GEOID) DESC LIMIT 1;
+
+Success (1 rows, 2.185 sec)
+  AE
+================================================================================
+[L2_0007] How many hospitals in Harris County, TX (identified by COUNTYFIPS = '48201') are located within census_tract polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN census_tracts b ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.COUNTYFIPS='48201' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.219 sec)
+  110
+================================================================================
+[L2_0008] How many pairs of census_tracts in Hillsborough County, FL (STATEFP = '12' and COUNTYFP = '057') share a common boundary?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_adjacent_pairs FROM census_tracts a JOIN census_tracts b ON ST_Touches(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='057' AND b.STATEFP='12' AND b.COUNTYFP='057' AND a.GEOID < b.GEOID AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.188 sec)
+  1025
+================================================================================
+[L2_0009] Which census_tract in Jacksonville, FL (CITY = 'JACKSONVILLE' and STATEFP = '12') contains the largest number of schools? Return the 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tracts_id FROM census_tracts b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.STATEFP='12' AND a.CITY='JACKSONVILLE' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.251 sec)
+  12031000800
+================================================================================
+[L2_0010] How many census_tracts in Hillsborough County, FL (STATEFP = '12' and COUNTYFP = '057') intersect floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='057' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.335 sec)
+  335
+================================================================================
+[L2_0011] Which census_tract in Broward County, FL (STATEFP = '12' and COUNTYFP = '011') has the largest overlap area with zcta polygons? Return the 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tracts_id FROM census_tracts a JOIN zcta b ON ST_Overlaps(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='011' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry, b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 0.290 sec)
+  12011980000
+================================================================================
+[L2_0012] How many census_tracts in Louisiana (identified by STATEFP = '22') are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN zcta b ON ST_Within(a.geometry, b.geometry) WHERE a.STATEFP = '22' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.279 sec)
+  514
+================================================================================
+[L2_0013] How many schools in Miami, FL (CITY = 'MIAMI' and STATEFP = '12') are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN zcta b ON ST_Within(ST_Point(a.LON, a.LAT), b.geometry) WHERE a.STATEFP='12' AND a.CITY='MIAMI' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.201 sec)
+  537
+================================================================================
+[L2_0014] In Palm Beach County, FL (STATEFP = '12' and COUNTYFP = '099'), which FEMA Flood Hazard Zone—excluding 'X' and 'AREA NOT INCLUDED'—has the second largest number of intersecting census_tracts? Return its FLD_ZONE code.
+--------------------------------------------------------------------------------
+SELECT b.FLD_ZONE FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='099' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) AND b.FLD_ZONE NOT IN ('X','AREA NOT INCLUDED') GROUP BY b.FLD_ZONE ORDER BY COUNT(DISTINCT a.GEOID) DESC LIMIT 1 OFFSET 1;
+
+Success (1 rows, 2.288 sec)
+  VE
+================================================================================
+[L2_0015] How many hospitals in Orleans Parish, LA (COUNTYFIPS = '22071') are located within census_tract polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN census_tracts b ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.COUNTYFIPS='22071' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.236 sec)
+  15
+================================================================================
+[L2_0016] How many census_tracts in Florida (identified by STATEFP = '12') are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN zcta b ON ST_Within(a.geometry, b.geometry) WHERE a.STATEFP = '12' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.417 sec)
+  2465
+================================================================================
+[L2_0017] Which zcta in Florida (STATEFP = '12') contains the largest number of schools? Return its 5-digit GEOID as the zcta id.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS zcta_id FROM zcta b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.STATEFP='12' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.236 sec)
+  33157
+================================================================================
+[L2_0018] Which census_tract in Louisiana (identified by STATEFP = '22') shares boundaries with the largest number of other census_tracts, including those in neighboring states? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tracts_id FROM census_tracts a JOIN census_tracts b ON ST_Touches(a.geometry, b.geometry) WHERE a.STATEFP='22' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY COUNT(DISTINCT b.GEOID) DESC LIMIT 1;
+
+Success (1 rows, 0.841 sec)
+  22051028900
+================================================================================
+[L2_0019] Which zcta in FL (identified by STATEFP = '12') contains the most hospitals? Return its 5-digit GEOID as the zcta id.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS zcta_id FROM zcta b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.STATEFP='12' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.193 sec)
+  32308
+================================================================================
+[L2_0020] Which floodplain polygon in Louisiana (STATEFP = '22') contains the largest number of schools? Return its Unique FEMA floodplain polygon identifier.
+--------------------------------------------------------------------------------
+SELECT b.GFID AS floodplain_id FROM floodplain b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.STATEFP='22' AND ST_IsValid(b.geometry) GROUP BY b.GFID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 2.356 sec)
+  ad62c09e-ed3a-4753-93b8-62dbd1e7c3c1
+================================================================================
+[L2_0021] In East Baton Rouge Parish, LA (identified by COUNTYFP = '033' and STATEFP = '22'), which FEMA Flood Hazard Zone (excluding 'X' and 'AREA NOT INCLUDED') ranks second in terms of the number of intersecting census_tracts? Return its FLD_ZONE code.
+--------------------------------------------------------------------------------
+SELECT b.FLD_ZONE FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='22' AND a.COUNTYFP='033' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) AND b.FLD_ZONE IS NOT NULL AND b.FLD_ZONE NOT IN ('X','AREA NOT INCLUDED') GROUP BY b.FLD_ZONE ORDER BY COUNT(DISTINCT a.GEOID) DESC LIMIT 1 OFFSET 1;
+
+Success (1 rows, 2.198 sec)
+  A
+================================================================================
+[L2_0022] In Broward County, FL (identified by COUNTYFP = '011' and STATEFP = '12'), which FEMA Flood Hazard Zone (excluding 'X' and 'AREA NOT INCLUDED') ranks second in terms of the number of intersecting census_tracts? Return its FLD_ZONE code.
+--------------------------------------------------------------------------------
+SELECT b.FLD_ZONE FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='011' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) AND b.FLD_ZONE IS NOT NULL AND b.FLD_ZONE NOT IN ('X','AREA NOT INCLUDED') GROUP BY b.FLD_ZONE ORDER BY COUNT(DISTINCT a.GEOID) DESC LIMIT 1 OFFSET 1;
+
+Success (1 rows, 2.311 sec)
+  AH
+================================================================================
+[L2_0023] Which floodplain polygon in TX (STATEFP = '48') contains the largest number of schools? Return its Unique FEMA floodplain polygon identifier.
+--------------------------------------------------------------------------------
+SELECT b.GFID AS floodplain_id FROM floodplain b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.STATEFP='48' AND ST_IsValid(b.geometry) GROUP BY b.GFID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 2.546 sec)
+  87641727-0834-4106-afd0-c2944041d29c
+================================================================================
+[L2_0024] Which zcta in LA (STATEFP = '22') contains the most hospitals? Return its 5-digit GEOID as the zcta id.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS zcta_id FROM zcta b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.STATEFP='22' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.197 sec)
+  70508
+================================================================================
+[L2_0025] Which floodplain polygon in Louisiana (identified by STATEFP = '22') contains the largest number of schools? Return its Unique FEMA floodplain polygon identifier.
+--------------------------------------------------------------------------------
+SELECT b.GFID AS floodplain_id FROM floodplain b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE b.STATEFP = '22' AND ST_IsValid(b.geometry) GROUP BY b.GFID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 2.033 sec)
+  ad62c09e-ed3a-4753-93b8-62dbd1e7c3c1
+================================================================================
+[L2_0026] Which census_tract in TX (STATEFP = '48') borders the largest number of neighboring census_tracts? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tracts_id FROM census_tracts a JOIN census_tracts b ON ST_Touches(a.geometry, b.geometry) WHERE a.STATEFP='48' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY COUNT(DISTINCT b.GEOID) DESC LIMIT 1;
+
+Success (1 rows, 2.955 sec)
+  48141010101
+================================================================================
+[L2_0027] Top 2 zcta in LA (identified by STATEFP 22) by number of contained schools.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS zcta_id, COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM zcta b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.STATEFP = '22' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY num_schools DESC LIMIT 2;
+
+Success (2 rows, 0.205 sec)
+  70806 | 24
+  70115 | 19
+================================================================================
+[L2_0028] How many schools in TX (STATEFP = '48') are located within census_tract polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN census_tracts b ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.STATEFP='48' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.282 sec)
+  11285
+================================================================================
+[L2_0029] Which ZCTA in TX (identified by STATEFP = '48') contains the largest number of hospitals? Return its 5-digit GEOID as the zcta id.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS zcta_id FROM zcta b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.STATEFP = '48' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.199 sec)
+  77030
+================================================================================
+[L2_0030] Which floodplain polygon in Texas (STATEFP = '48') contains the largest number of schools whose CITY = 'AUSTIN'? Return its Unique FEMA floodplain polygon identifier.
+--------------------------------------------------------------------------------
+SELECT b.GFID AS floodplain_id FROM floodplain b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE b.STATEFP='48' AND a.CITY='AUSTIN' AND ST_IsValid(b.geometry) GROUP BY b.GFID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 2.318 sec)
+  c8b590c8-8c68-4ee7-8bf5-8fa1f00b01bf
+================================================================================
+[L2_0031] How many census_tracts in TX (identified by STATEFP 48) contains zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN zcta b ON ST_Contains(a.geometry, b.geometry) WHERE a.STATEFP = '48' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.420 sec)
+  166
+================================================================================
+[L2_0032] How many census_tracts in East Baton Rouge Parish, LA (identified by COUNTYFP 033 and STATEFP 22) intersect zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP = '22' AND a.COUNTYFP = '033' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.223 sec)
+  108
+================================================================================
+[L2_0033] How many census_tracts in Orleans Parish, LA (identified by COUNTYFP 071 and STATEFP 22) intersect zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP = '22' AND a.COUNTYFP = '071' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.222 sec)
+  184
+================================================================================
+[L2_0034] Which census_tract in LA (identified by STATEFP = '22') contains the largest number of hospitals? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE b.STATEFP='22' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.054 sec)
+  22033003804
+================================================================================
+[L2_0035] How many schools in TX (identified by STATEFP 48) are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN zcta b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP = '48' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.256 sec)
+  11284
+================================================================================
+[L2_0036] Which floodplain polygon in TX (identified by STATEFP = '48') contains the largest number of hospitals? Return its Unique FEMA floodplain polygon identifier.
+--------------------------------------------------------------------------------
+SELECT b.GFID AS floodplain_id FROM floodplain b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE b.STATEFP='48' AND ST_IsValid(b.geometry) GROUP BY b.GFID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 2.317 sec)
+  87641727-0834-4106-afd0-c2944041d29c
+================================================================================
+[L2_0037] How many census_tracts in FL (identified by STATEFP 12) are located within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Within(a.geometry, b.geometry) WHERE a.STATEFP = '12' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 3.199 sec)
+  211
+================================================================================
+[L2_0038] How many hospitals in Texas (STATEFP = '48') are located within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN floodplain b ON ST_Within(ST_Point(a.LON, a.LAT), b.geometry) WHERE a.STATEFP = '48' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.341 sec)
+  723
+================================================================================
+[L2_0039] Which FEMA Flood Hazard Zone in LA (identified by STATEFP = '22') contains the largest number of census_tracts within floodplain polygons? Return its FLD_ZONE code.
+--------------------------------------------------------------------------------
+SELECT b.FLD_ZONE FROM census_tracts a JOIN floodplain b ON ST_Contains(b.geometry,a.geometry) WHERE a.STATEFP='22' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY b.FLD_ZONE ORDER BY COUNT(DISTINCT a.GEOID) DESC LIMIT 1;
+
+Success (1 rows, 2.890 sec)
+  AREA NOT INCLUDED
+================================================================================
+[L2_0040] How many schools in TX (identified by STATEFP 48) are located within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN floodplain b ON ST_Within(ST_Point(a.LON, a.LAT), b.geometry) WHERE a.STATEFP = '48' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.525 sec)
+  9704
+================================================================================
+[L2_0041] How many hospitals in LA (identified by STATEFP = '22') are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN zcta b ON ST_Within(ST_Point(a.LON, a.LAT), b.geometry) WHERE a.STATEFP = '22' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.215 sec)
+  269
+================================================================================
+[L2_0042] How many census_tracts in TX (identified by STATEFP = '48') are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN zcta b ON ST_Within(a.geometry, b.geometry) WHERE a.STATEFP = '48' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.529 sec)
+  3143
+================================================================================
+[L2_0043] How many schools in Austin, TX (identified by CITY = 'AUSTIN' and STATEFP = '48') are located within census_tracts polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN census_tracts b ON ST_Within(ST_Point(a.LON, a.LAT), b.geometry) WHERE a.STATEFP = '48' AND a.CITY = 'AUSTIN' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.228 sec)
+  395
+================================================================================
+[L2_0044] How many census_tracts in LA (identified by STATEFP = '22') are located within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Within(a.geometry, b.geometry) WHERE a.STATEFP = '22' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.859 sec)
+  59
+================================================================================
+[L2_0045] How many census_tracts in TX (identified by STATEFP = '48') intersect floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP = '48' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 4.878 sec)
+  6295
+================================================================================
+[L2_0046] Which FEMA Flood Hazard Zone in Harris County, TX (identified by COUNTYFP = '201' and STATEFP = '48') contains the largest number of census_tracts intersecting floodplain polygons, excluding areas marked as 'AREA NOT INCLUDED' or 'ZONE X'? Return its FLD_ZONE code.
+--------------------------------------------------------------------------------
+SELECT b.FLD_ZONE FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='201' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) AND b.FLD_ZONE NOT IN ('AREA NOT INCLUDED','AREA OF MINIMAL FLOOD HAZARD','X') GROUP BY b.FLD_ZONE ORDER BY COUNT(DISTINCT a.GEOID) DESC LIMIT 1;
+
+Success (1 rows, 2.176 sec)
+  AE
+================================================================================
+[L2_0047] Which census_tract in TX (identified by STATEFP = '48') contains the largest number of schools? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.STATEFP='48' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.301 sec)
+  48451000801
+================================================================================
+[L2_0048] Which floodplain polygon in TX (identified by STATEFP = '48') contains the largest number of schools? Return its Unique FEMA floodplain polygon identifier.
+--------------------------------------------------------------------------------
+SELECT b.GFID AS floodplain_id FROM floodplain b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE b.STATEFP='48' AND ST_IsValid(b.geometry) GROUP BY b.GFID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 2.437 sec)
+  87641727-0834-4106-afd0-c2944041d29c
+================================================================================
+[L2_0049] How many schools in TX (identified by STATEFP = '48') are located within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN floodplain b ON ST_Within(ST_Point(a.LON, a.LAT), b.geometry) WHERE a.STATEFP = '48' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.585 sec)
+  9704
+================================================================================
+[L2_0050] How many schools in New Orleans, LA (identified by CITY = 'NEW ORLEANS' and STATEFP = '22') are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN zcta b ON ST_Within(ST_Point(a.LON, a.LAT), b.geometry) WHERE a.STATEFP='22' AND a.CITY='NEW ORLEANS' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.210 sec)
+  152
+================================================================================
+[L2_0051] Which census_tract in Travis County, TX (identified by COUNTYFP = '453' and STATEFP = '48') has the largest overlap area with floodplain polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN floodplain b ON ST_Overlaps(a.geometry, b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='453' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 2.496 sec)
+  48453036300
+================================================================================
+[L2_0052] Which census_tract in Orleans County, LA (identified by COUNTYFP = '071' and STATEFP = '22') has the largest overlap area with zcta polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN zcta b ON ST_Overlaps(a.geometry, b.geometry) WHERE a.STATEFP='22' AND a.COUNTYFP='071' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 0.229 sec)
+  22071001758
+================================================================================
+[L2_0053] Which zcta in TX (identified by STATEFP = '48') contains the largest number of schools? Return its 5-digit GEOID as the zcta id.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS zcta_id FROM zcta b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='48' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.255 sec)
+  78626
+================================================================================
+[L2_0054] Which census_tract in Miami-Dade County, FL (identified by COUNTYFP = '086' and STATEFP = '12') has the largest overlap area with zcta polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN zcta b ON ST_Overlaps(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='086' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 0.302 sec)
+  12086011500
+================================================================================
+[L2_0055] How many census_tracts in Travis County, TX (identified by COUNTYFP = '453' and STATEFP = '48') intersect other census_tract polygons within the same county (excluding self-intersections)?
+--------------------------------------------------------------------------------
+WITH valid_tracts AS (SELECT GEOID, geometry AS geom FROM census_tracts WHERE STATEFP='48' AND COUNTYFP='453' AND ST_IsValid(geometry)) SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM valid_tracts a JOIN valid_tracts b ON ST_Intersects(a.geom, b.geom) WHERE a.GEOID < b.GEOID;
+
+Success (1 rows, 0.094 sec)
+  261
+================================================================================
+[L2_0056] Which FEMA Flood Hazard Zone in Travis County, TX (identified by COUNTYFP = '453' and STATEFP = '48') contains the largest number of census_tracts intersecting floodplain polygons, excluding areas marked as 'AREA NOT INCLUDED' or 'ZONE X'? Return its FLD_ZONE code.
+--------------------------------------------------------------------------------
+SELECT b.FLD_ZONE FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='453' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) AND b.FLD_ZONE NOT IN ('AREA NOT INCLUDED','AREA OF MINIMAL FLOOD HAZARD','X') GROUP BY b.FLD_ZONE ORDER BY COUNT(DISTINCT a.GEOID) DESC LIMIT 1;
+
+Success (1 rows, 2.217 sec)
+  AE
+================================================================================
+[L2_0057] How many census_tracts in Lafayette Parish, LA (identified by COUNTYFP = '055' and STATEFP = '22') intersect other census_tract polygons within the same county (excluding self-intersections)?
+--------------------------------------------------------------------------------
+WITH valid_tracts AS (SELECT GEOID, geometry AS geom FROM census_tracts WHERE STATEFP='22' AND COUNTYFP='055' AND ST_IsValid(geometry)) SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM valid_tracts a JOIN valid_tracts b ON ST_Intersects(a.geom, b.geom) WHERE a.GEOID < b.GEOID;
+
+Success (1 rows, 0.030 sec)
+  52
+================================================================================
+[L2_0058] Which census_tract in TX (identified by STATEFP = '48') contains the largest number of schools? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='48' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.293 sec)
+  48451000801
+================================================================================
+[L2_0059] How many census_tracts in LA (identified by STATEFP = '22') are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN zcta b ON ST_Within(a.geometry, b.geometry) WHERE a.STATEFP='22' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.279 sec)
+  514
+================================================================================
+[L2_0060] Which census_tract in FL (identified by STATEFP = '12') contains the largest number of schools? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='12' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.264 sec)
+  12086009010
+================================================================================
+[L2_0061] Which census_tract in LA (identified by STATEFP = '22') has the largest overlap area with floodplain polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN floodplain b ON ST_Overlaps(a.geometry, b.geometry) WHERE a.STATEFP='22' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 5.302 sec)
+  22087030105
+================================================================================
+[L2_0062] How many census_tracts in LA (identified by STATEFP = '22') are located within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Within(a.geometry, b.geometry) WHERE a.STATEFP='22' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.813 sec)
+  59
+================================================================================
+[L2_0063] Which floodplain polygon in TX (identified by STATEFP = '48') contains the largest number of hospitals? Return its Unique FEMA floodplain polygon identifier.
+--------------------------------------------------------------------------------
+SELECT b.GFID AS floodplain_id FROM floodplain b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='48' AND ST_IsValid(b.geometry) GROUP BY b.GFID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 2.394 sec)
+  87641727-0834-4106-afd0-c2944041d29c
+================================================================================
+[L2_0064] Which census_tract in TX (identified by STATEFP = '48') contains the largest number of hospitals? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='48' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.228 sec)
+  48201313102
+================================================================================
+[L2_0065] Which zcta in TX (identified by STATEFP = '48') contains the largest number of schools? Return its 5-digit GEOID as the zcta id.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS zcta_id FROM zcta b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='48' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.271 sec)
+  78626
+================================================================================
+[L2_0066] How many census_tracts in TX (identified by STATEFP = '48') intersect zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='48' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.614 sec)
+  6893
+================================================================================
+[L2_0067] Which census_tract in Florida (identified by STATEFP = '12') contains the largest number of schools? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.STATEFP='12' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.259 sec)
+  12086009010
+================================================================================
+[L2_0068] How many schools in FL (identified by STATEFP = '12') are located within census_tract polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN census_tracts b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='12' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.269 sec)
+  6596
+================================================================================
+[L2_0069] How many hospitals in FL (identified by STATEFP = '12') intersect zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN zcta b ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='12' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.192 sec)
+  381
+================================================================================
+[L2_0070] How many schools in TX (identified by STATEFP = '48') are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN zcta b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='48' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.255 sec)
+  11284
+================================================================================
+[L2_0071] Which census_tract in TX (identified by STATEFP = '48') has the largest overlap area with zcta polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='48' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 3.645 sec)
+  48043950500
+================================================================================
+[L2_0072] Which census_tract in FL (identified by STATEFP = '12') contains the largest number of hospitals? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='12' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.231 sec)
+  12099001402
+================================================================================
+[L2_0073] How many hospitals in LA (identified by STATEFP = '22') are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN zcta b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='22' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.192 sec)
+  269
+================================================================================
+[L2_0074] How many hospitals in FL (identified by STATEFP = '12') are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN zcta b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='12' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.194 sec)
+  381
+================================================================================
+[L2_0075] How many census_tracts in LA (identified by STATEFP = '22') are located within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Within(a.geometry, b.geometry) WHERE a.STATEFP='22' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 3.027 sec)
+  59
+================================================================================
+[L2_0076] How many schools in LA (identified by STATEFP = '22') are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN zcta b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='22' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.207 sec)
+  1787
+================================================================================
+[L2_0077] Which census_tract in Florida (identified by STATEFP = '12') contains the largest number of hospitals? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='12' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.223 sec)
+  12099001402
+================================================================================
+[L2_0078] Which census_tract in LA (identified by STATEFP = '22') contains the largest number of hospitals? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='22' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.221 sec)
+  22051020519
+================================================================================
+[L2_0079] Which zcta in TX (identified by STATEFP = '48') contains the largest number of hospitals? Return its 5-digit GEOID as the zcta id.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS zcta_id FROM zcta b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='48' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.202 sec)
+  77030
+================================================================================
+[L2_0080] How many hospitals in TX (identified by STATEFP = '48') are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN zcta b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='48' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.199 sec)
+  876
+================================================================================
+[L2_0081] How many census_tracts in Miami-Dade County, FL (identified by COUNTYFP = '086' and STATEFP = '12') intersect zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='086' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.239 sec)
+  707
+================================================================================
+[L2_0082] How many census_tracts in Harris County, TX (identified by COUNTYFP = '201' and STATEFP = '48') are located within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Within(a.geometry, b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='201' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.398 sec)
+  180
+================================================================================
+[L2_0083] Which census_tract in Travis County, TX (identified by COUNTYFP = '453' and STATEFP = '48') has the largest overlap area with floodplain polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry,b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='453' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 2.532 sec)
+  48453036300
+================================================================================
+[L2_0084] How many census_tracts in FL (identified by STATEFP = '12') intersect other census_tract polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN census_tracts b ON ST_Intersects(a.geometry,b.geometry) WHERE a.STATEFP='12' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.630 sec)
+  5160
+================================================================================
+[L2_0085] How many hospitals in TX (identified by STATEFP = '48') are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN zcta b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='48' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.194 sec)
+  876
+================================================================================
+[L2_0086] How many hospitals in East Baton Rouge County, LA (identified by COUNTYFP = '033' and STATEFP = '22') are located within census_tract polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN census_tracts b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='22' AND b.COUNTYFP='033' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.032 sec)
+  21
+================================================================================
+[L2_0087] Which census_tract in FL (identified by STATEFP = '12') contains the largest number of hospitals? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='12' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.225 sec)
+  12099001402
+================================================================================
+[L2_0088] How many schools in Louisiana (identified by STATEFP = '22') are located within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN floodplain b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='22' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.394 sec)
+  1555
+================================================================================
+[L2_0089] Which census_tract in Miami-Dade County, FL (identified by COUNTYFP = '086' and STATEFP = '12') contains the largest number of hospitals? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='12' AND b.COUNTYFP='086' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.037 sec)
+  12086003004
+================================================================================
+[L2_0090] Which zcta in LA (identified by STATEFP = '22') contains the largest number of schools? Return its 5-digit GEOID as the zcta id.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS zcta_id FROM zcta b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='22' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.215 sec)
+  70806
+================================================================================
+[L2_0091] Which floodplain polygon in TX (identified by STATEFP = '48') contains the largest number of hospitals? Return its Unique FEMA floodplain polygon identifier.
+--------------------------------------------------------------------------------
+SELECT b.GFID AS floodplain_id FROM floodplain b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='48' AND ST_IsValid(b.geometry) GROUP BY b.GFID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 2.349 sec)
+  87641727-0834-4106-afd0-c2944041d29c
+================================================================================
+[L2_0092] Which floodplain polygon in LA (identified by STATEFP = '22') contains the largest number of schools? Return its Unique FEMA floodplain polygon identifier.
+--------------------------------------------------------------------------------
+SELECT b.GFID AS floodplain_id FROM floodplain b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON, a.LAT)) WHERE a.STATEFP = '22' AND ST_IsValid(b.geometry) GROUP BY b.GFID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 2.317 sec)
+  ad62c09e-ed3a-4753-93b8-62dbd1e7c3c1
+================================================================================
+[L2_0093] Which census_tract in Bexar County, TX (identified by COUNTYFP = '029' and STATEFP = '48') contains the largest number of hospitals? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='48' AND b.COUNTYFP='029' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.045 sec)
+  48029181402
+================================================================================
+[L2_0094] How many hospitals in LA (identified by STATEFP = '22') are located within zcta polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN zcta b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='22' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.191 sec)
+  269
+================================================================================
+[L2_0095] How many hospitals in McAllen, TX (identified by CITY = 'MCALLEN' and STATEFP = '48') are located within census_tract polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN census_tracts b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='48' AND UPPER(a.CITY)='MCALLEN' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.235 sec)
+  7
+================================================================================
+[L2_0096] Which zcta in FL (identified by STATEFP = '12') contains the largest number of schools? Return its 5-digit GEOID as the zcta id.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS zcta_id FROM zcta b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='12' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.228 sec)
+  33012
+================================================================================
+[L2_0097] Which census_tract in Orleans Parish, LA (identified by COUNTYFP = '071' and STATEFP = '22') contains the largest number of hospitals? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='22' AND b.COUNTYFP='071' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.040 sec)
+  22071009900
+================================================================================
+[L2_0098] Which census_tract in FL (identified by STATEFP = '12') has the largest overlap area with zcta polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry,b.geometry) WHERE a.STATEFP='12' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 2.119 sec)
+  12097043802
+================================================================================
+[L2_0099] Which zcta in LA (identified by STATEFP = '22') contains the largest number of hospitals? Return its 5-digit GEOID as the zcta id.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS zcta_id FROM zcta b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='22' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.202 sec)
+  70508
+================================================================================
+[L2_0100] Which census_tract in Miami-Dade County, FL (identified by COUNTYFP = '086' and STATEFP = '12') has the largest overlap area with zcta polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry,b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='086' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 0.348 sec)
+  12086011500
+================================================================================
+[L2_0101] Which census_tract in Dallas, TX (identified by CITY = 'DALLAS' and STATEFP = '48') contains the largest number of hospitals? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='48' AND a.CITY='DALLAS' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.221 sec)
+  48113002200
+================================================================================
+[L2_0102] Which floodplain polygon in Bexar County, TX (identified by COUNTYFP = '029' and STATEFP = '48') overlaps the largest total census_tract area? Return its Unique FEMA floodplain polygon identifier.
+--------------------------------------------------------------------------------
+SELECT b.GFID AS floodplain_id FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='029' GROUP BY b.GFID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 0.731 sec)
+  0a5d9e00-2e1c-41a5-a89c-cdc365e46d03
+================================================================================
+[L2_0103] How many schools in Corpus Christi, TX (identified by CITY = 'CORPUS CHRISTI' and STATEFP = '48') fall within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN floodplain b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='48' AND UPPER(a.CITY)='CORPUS CHRISTI' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.367 sec)
+  119
+================================================================================
+[L2_0104] Which census_tract in Duval County, FL (identified by COUNTYFP = '031' and STATEFP = '12') has the largest overlap area with floodplain polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry,b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='031' GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 1.059 sec)
+  12031017300
+================================================================================
+[L2_0105] How many hospitals in Tampa, FL (identified by CITY = 'TAMPA' and STATEFP = '12') are located in floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN floodplain b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='12' AND UPPER(a.CITY)='TAMPA' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.305 sec)
+  17
+================================================================================
+[L2_0106] Which ZCTA in Baton Rouge, LA (identified by CITY = 'BATON ROUGE' and STATEFP = '22') contains the largest number of schools? Return its 5-digit GEOID as the zcta id.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS zcta_id FROM zcta b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='22' AND UPPER(a.CITY)='BATON ROUGE' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.199 sec)
+  70806
+================================================================================
+[L2_0107] How many hospitals in Shreveport, LA (identified by CITY = 'SHREVEPORT' and STATEFP = '22') are located within ZCTA polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN zcta b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='22' AND a.CITY='SHREVEPORT' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.191 sec)
+  17
+================================================================================
+[L2_0108] Which census_tract in Palm Beach County, FL (identified by COUNTYFP = '099' and STATEFP = '12') overlaps the largest ZCTA area? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='099' GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 0.121 sec)
+  12099007917
+================================================================================
+[L2_0109] How many schools in Louisiana (identified by STATEFP = '22') fall within census_tract polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN census_tracts b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='22' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.245 sec)
+  1786
+================================================================================
+[L2_0110] Which census_tract in Collin County, TX (identified by COUNTYFP = '085' and STATEFP = '48') intersects the largest floodplain area? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='085' GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 0.693 sec)
+  48085030102
+================================================================================
+[L2_0111] Which floodplain polygon in Tampa, FL (identified by CITY = 'TAMPA' and STATEFP = '12') contains the largest number of hospitals? Return its Unique FEMA floodplain polygon identifier.
+--------------------------------------------------------------------------------
+SELECT b.GFID AS floodplain_id FROM floodplain b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='12' AND UPPER(a.CITY)='TAMPA' AND ST_IsValid(b.geometry) GROUP BY b.GFID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 2.336 sec)
+  ef973673-3efc-44af-a661-585f27a3bc1b
+================================================================================
+[L2_0112] Which floodplain polygon in Tarrant County, TX (identified by COUNTYFP = '439' and STATEFP = '48') overlaps the largest area of census_tracts? Return its Unique FEMA floodplain polygon identifier.
+--------------------------------------------------------------------------------
+SELECT b.GFID AS floodplain_id FROM floodplain b JOIN census_tracts a ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='439' GROUP BY b.GFID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 0.989 sec)
+  92c5c131-27c2-428a-922a-22415dd3470b
+================================================================================
+[L2_0113] Which census_tract in Orange County, FL (identified by COUNTYFP = '095' and STATEFP = '12') overlaps the largest ZCTA area? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='095' GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 0.233 sec)
+  12095016604
+================================================================================
+[L2_0114] Which census_tract in Lafayette, LA (identified by CITY = 'Lafayette' and STATEFP = '22') contains the largest number of schools? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='22' AND a.CITY='LAFAYETTE' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.230 sec)
+  22055000200
+================================================================================
+[L2_0115] Which census_tract in Hillsborough County, FL (identified by COUNTYFP = '057' and STATEFP = '12') overlaps the largest floodplain area? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='057' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 2.659 sec)
+  12057990000
+================================================================================
+[L2_0116] How many schools in El Paso, TX (identified by CITY = 'EL PASO' and STATEFP = '48') are located in census_tract polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN census_tracts b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='48' AND a.CITY='EL PASO' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.233 sec)
+  296
+================================================================================
+[L2_0117] Which census_tract in East Baton Rouge Parish, LA (identified by COUNTYFP = '033' and STATEFP = '22') overlaps the largest ZCTA area? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='22' AND a.COUNTYFP='033' GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 0.223 sec)
+  22033004700
+================================================================================
+[L2_0118] How many census_tracts in Pinellas County, FL (identified by COUNTYFP = '103' and STATEFP = '12') intersect floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='103' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.335 sec)
+  275
+================================================================================
+[L2_0119] Which census_tract in Galveston County, TX (identified by COUNTYFP = '167' and STATEFP = '48') has the largest overlap area with floodplain polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='167' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 3.082 sec)
+  48167990100
+================================================================================
+[L2_0120] How many hospitals in Fort Worth, TX (identified by CITY = 'FORT WORTH' and STATEFP = '48') intersect floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN floodplain b ON ST_Intersects(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='48' AND UPPER(a.CITY)='FORT WORTH' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.324 sec)
+  26
+================================================================================
+[L2_0121] Which census_tract in Williamson County, TX (identified by COUNTYFP = '491' and STATEFP = '48') overlaps the largest ZCTA area? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='491' GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 0.088 sec)
+  48491020900
+================================================================================
+[L2_0122] How many schools in San Antonio, TX (identified by CITY = 'SAN ANTONIO' and STATEFP = '48') are located within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN floodplain b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='48' AND a.CITY='SAN ANTONIO' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.369 sec)
+  668
+================================================================================
+[L2_0123] Which census_tract in Leon County, FL (identified by COUNTYFP = '073' and STATEFP = '12') overlaps the largest area with other census_tract polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN census_tracts b ON ST_Overlaps(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='073' AND a.GEOID < b.GEOID GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 1.525 sec)
+  12073002701
+================================================================================
+[L2_0124] How many census_tracts in St. Tammany Parish, LA (identified by COUNTYFP = '103' and STATEFP = '22') are located within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Within(a.geometry, b.geometry) WHERE a.STATEFP='22' AND a.COUNTYFP='103' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.382 sec)
+  41
+================================================================================
+[L2_0125] Which census_tract in Galveston, TX (identified by CITY = 'GALVESTON' and STATEFP = '48') contains the largest number of hospitals? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='48' AND a.CITY='GALVESTON' AND ST_IsValid(b.geometry) GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.223 sec)
+  48167724300
+================================================================================
+[L2_0126] How many hospitals in Plano, TX (identified by CITY = 'PLANO' and STATEFP = '48') intersect ZCTA polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN zcta b ON ST_Intersects(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='48' AND a.CITY='PLANO' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.192 sec)
+  18
+================================================================================
+[L2_0127] How many census_tracts in Palm Beach County, FL (identified by COUNTYFP = '099' and STATEFP = '12') contain floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Contains(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='099' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.380 sec)
+  261
+================================================================================
+[L2_0128] Which census_tract in Dallas County, TX (identified by COUNTYFP = '113' and STATEFP = '48') overlaps the largest total ZCTA area? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='113' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY SUM(ST_Area(ST_Intersection(a.geometry,b.geometry))) DESC LIMIT 1;
+
+Success (1 rows, 0.391 sec)
+  48113016903
+================================================================================
+[L2_0129] How many census_tracts in Cameron Parish, LA (identified by COUNTYFP = '023' and STATEFP = '22') intersect floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry, b.geometry) WHERE a.STATEFP='22' AND a.COUNTYFP='023' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.392 sec)
+  5
+================================================================================
+[L2_0130] How many hospitals in Orlando, FL (identified by CITY = 'ORLANDO' and STATEFP = '12') are within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN floodplain b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='12' AND a.CITY='ORLANDO' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.319 sec)
+  14
+================================================================================
+[L2_0131] How many census_tracts in Harris County, TX (identified by COUNTYFP = '201' and STATEFP = '48') intersect other census_tract polygons within the same county (excluding self-intersections)?
+--------------------------------------------------------------------------------
+WITH valid_tracts AS (SELECT GEOID, geometry AS geom FROM census_tracts WHERE STATEFP='48' AND COUNTYFP='201' AND ST_IsValid(geometry)) SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM valid_tracts a JOIN valid_tracts b ON ST_Intersects(a.geom, b.geom) WHERE a.GEOID < b.GEOID;
+
+Success (1 rows, 0.668 sec)
+  1077
+================================================================================
+[L2_0132] How many census_tracts in Dallas County, TX (identified by COUNTYFP = '113' and STATEFP = '48') intersect other census_tract polygons within the same county (excluding self-intersections)?
+--------------------------------------------------------------------------------
+WITH valid_tracts AS (SELECT GEOID, geometry AS geom FROM census_tracts WHERE STATEFP='48' AND COUNTYFP='113' AND ST_IsValid(geometry)) SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM valid_tracts a JOIN valid_tracts b ON ST_Intersects(a.geom, b.geom) WHERE a.GEOID < b.GEOID;
+
+Success (1 rows, 0.249 sec)
+  591
+================================================================================
+[L2_0133] How many census_tracts in Orleans Parish, LA (identified by COUNTYFP = '071' and STATEFP = '22') intersect other census_tract polygons within the same county (excluding self-intersections)?
+--------------------------------------------------------------------------------
+WITH valid_tracts AS (SELECT GEOID, geometry AS geom FROM census_tracts WHERE STATEFP='22' AND COUNTYFP='071' AND ST_IsValid(geometry)) SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM valid_tracts a JOIN valid_tracts b ON ST_Intersects(a.geom,b.geom) WHERE a.GEOID < b.GEOID;
+
+Success (1 rows, 0.040 sec)
+  169
+================================================================================
+[L2_0134] Which census_tract in Orange County, FL (identified by COUNTYFP = '095' and STATEFP = '12') contains the most ZCTA polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN zcta b ON ST_Contains(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='095' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry) GROUP BY a.GEOID ORDER BY COUNT(DISTINCT b.GEOID) DESC LIMIT 1;
+
+Success (1 rows, 0.248 sec)
+  12095017902
+================================================================================
+[L2_0135] How many census_tracts in Montgomery County, TX (identified by COUNTYFP = '339' and STATEFP = '48') are completely within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Within(a.geometry,b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='339' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.405 sec)
+  1
+================================================================================
+[L2_0136] How many ZCTA polygons intersect census_tracts in East Baton Rouge Parish, LA (identified by COUNTYFP = '033' and STATEFP = '22')?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT b.GEOID) AS num_zcta FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry,b.geometry) WHERE a.STATEFP='22' AND a.COUNTYFP='033';
+
+Success (1 rows, 0.049 sec)
+  38
+================================================================================
+[L2_0137] How many schools in Tampa, FL (identified by CITY = 'TAMPA' and STATEFP = '12') lie within census_tract polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN census_tracts b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='12' AND UPPER(a.CITY)='TAMPA' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.229 sec)
+  268
+================================================================================
+[L2_0138] Which census_tract in El Paso County, TX (identified by COUNTYFP = '141' and STATEFP = '48') overlaps the largest number of ZCTA polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry,b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='141' GROUP BY a.GEOID ORDER BY COUNT(DISTINCT b.GEOID) DESC LIMIT 1;
+
+Success (1 rows, 0.054 sec)
+  48141010101
+================================================================================
+[L2_0139] How many hospitals in Miami, FL (identified by CITY = 'MIAMI' and STATEFP = '12') are located within census_tract polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN census_tracts b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='12' AND UPPER(a.CITY)='MIAMI' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.218 sec)
+  20
+================================================================================
+[L2_0140] How many schools in Galveston, TX (identified by CITY = 'GALVESTON' and STATEFP = '48') lie within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN floodplain b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='48' AND UPPER(a.CITY)='GALVESTON' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.355 sec)
+  20
+================================================================================
+[L2_0141] Which census_tract in Slidell, LA (identified by CITY = 'SLIDELL' and STATEFP = '22') contains the largest number of hospitals? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='22' AND a.CITY='SLIDELL' GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.042 sec)
+  22103041002
+================================================================================
+[L2_0142] How many census_tracts in Leon County, FL (identified by COUNTYFP = '073' and STATEFP = '12') are within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Within(a.geometry, b.geometry) WHERE a.STATEFP='12' AND a.COUNTYFP='073' AND ST_IsValid(a.geometry) AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.333 sec)
+  2
+================================================================================
+[L2_0143] How many hospitals in Baton Rouge, LA (identified by CITY = 'BATON ROUGE' and STATEFP = '22') are located in ZCTA polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_hospitals FROM hospitals a JOIN zcta b ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='22' AND a.CITY='BATON ROUGE' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 0.192 sec)
+  20
+================================================================================
+[L2_0144] How many census_tracts in Travis County, TX (identified by COUNTYFP = '453' and STATEFP = '48') intersect floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.GEOID) AS num_census_tracts FROM census_tracts a JOIN floodplain b ON ST_Intersects(a.geometry,b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='453';
+
+Success (1 rows, 0.564 sec)
+  290
+================================================================================
+[L2_0145] Which census_tract in Tampa, FL (identified by CITY = 'TAMPA' and STATEFP = '12') contains the largest number of schools? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN schools a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='12' AND a.CITY='TAMPA' GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.050 sec)
+  12057010402
+================================================================================
+[L2_0146] How many schools in Austin, TX (identified by CITY = 'AUSTIN' and STATEFP = '48') are within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN floodplain b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='48' AND UPPER(a.CITY)='AUSTIN' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.339 sec)
+  392
+================================================================================
+[L2_0147] Which census_tract in Bexar County, TX (identified by COUNTYFP = '029' and STATEFP = '48') overlaps the largest number of ZCTA polygons? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT a.GEOID AS census_tract_id FROM census_tracts a JOIN zcta b ON ST_Intersects(a.geometry,b.geometry) WHERE a.STATEFP='48' AND a.COUNTYFP='029' GROUP BY a.GEOID ORDER BY COUNT(DISTINCT b.GEOID) DESC LIMIT 1;
+
+Success (1 rows, 0.328 sec)
+  48029131802
+================================================================================
+[L2_0148] How many schools in Austin, TX (identified by CITY = 'AUSTIN' and STATEFP = '48') lie within floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT a.UNIQUE_ID) AS num_schools FROM schools a JOIN floodplain b ON ST_Within(ST_Point(a.LON,a.LAT), b.geometry) WHERE a.STATEFP='48' AND UPPER(a.CITY)='AUSTIN' AND ST_IsValid(b.geometry);
+
+Success (1 rows, 2.319 sec)
+  392
+================================================================================
+[L2_0149] Which ZCTA in Miami, FL (identified by CITY = 'MIAMI' and STATEFP = '12') contains the largest number of hospitals? Return its 5-digit GEOID as the zcta id.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS zcta_id FROM zcta b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='12' AND a.CITY='MIAMI' GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.024 sec)
+  33136
+================================================================================
+[L2_0150] Which census_tract in Sugar Land, TX (identified by CITY = 'SUGAR LAND' and STATEFP = '48') has the largest number of hospitals within its boundary? Return its 11-digit GEOID.
+--------------------------------------------------------------------------------
+SELECT b.GEOID AS census_tract_id FROM census_tracts b JOIN hospitals a ON ST_Contains(b.geometry, ST_Point(a.LON,a.LAT)) WHERE a.STATEFP='48' AND a.CITY='SUGAR LAND' GROUP BY b.GEOID ORDER BY COUNT(DISTINCT a.UNIQUE_ID) DESC LIMIT 1;
+
+Success (1 rows, 0.037 sec)
+  48157673902

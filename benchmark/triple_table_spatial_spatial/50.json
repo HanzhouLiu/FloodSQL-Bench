@@ -1,0 +1,452 @@
+[
+  {
+    "id": "L5_0001",
+    "question": "How many hospitals are located within both FEMA floodplain polygons and census tract boundaries in Harris County, Texas (identified by the leftmost 5 digits of GEOID 48201 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT h.UNIQUE_ID) AS num_hospitals FROM hospitals h JOIN floodplain f ON ST_Within(ST_Point(h.LON, h.LAT), f.geometry) JOIN census_tracts t ON ST_Within(ST_Point(h.LON, h.LAT), t.geometry) WHERE LEFT(t.GEOID,5)='48201' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_hospitals')",
+    "expected_columns": ["num_hospitals"]
+  },
+  {
+    "id": "L5_0002",
+    "question": "What is the total area where census tract geometries and FEMA floodplain polygons intersect, considering only tracts that also intersect ZCTA boundaries, in Dallas County, Texas (identified by the leftmost 5 digits of GEOID 48113 in the census_tract table)?",
+    "sql": "SELECT SUM(ST_Area(ST_Intersection(t.geometry, f.geometry))) AS total_overlap_area FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='48113' AND t.GEOID IN (SELECT DISTINCT t2.GEOID FROM census_tracts t2 JOIN zcta z ON ST_Intersects(t2.geometry, z.geometry) WHERE LEFT(t2.GEOID,5)='48113' AND ST_IsValid(t2.geometry) AND ST_IsValid(z.geometry)) AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='total_overlap_area')",
+    "expected_columns": ["total_overlap_area"]
+  },
+  {
+    "id": "L5_0003",
+    "question": "Among ZCTAs that intersect both census tract and FEMA floodplain geometries in Orleans Parish, Louisiana (identified by the leftmost 5 digits of GEOID 22071 in the census_tract table), how many distinct ZCTAs are found?",
+    "sql": "SELECT COUNT(DISTINCT z.GEOID) AS num_zcta FROM zcta z JOIN census_tracts t ON ST_Intersects(z.geometry, t.geometry) JOIN floodplain f ON ST_Intersects(f.geometry, z.geometry) WHERE LEFT(t.GEOID,5)='22071' AND ST_IsValid(z.geometry) AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_zcta')",
+    "expected_columns": ["num_zcta"]
+  },
+  {
+    "id": "L5_0004",
+    "question": "How many FEMA floodplain polygons partially overlap both ZCTAs and census tracts in Miami-Dade County, Florida (identified by the leftmost 5 digits of GEOID 12086 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT f.GFID) AS num_floodplain FROM floodplain f JOIN zcta z ON ST_Overlaps(f.geometry, z.geometry) JOIN census_tracts t ON ST_Overlaps(f.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='12086' AND ST_IsValid(f.geometry) AND ST_IsValid(z.geometry) AND ST_IsValid(t.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_floodplain')",
+    "expected_columns": ["num_floodplain"]
+  },
+  {
+    "id": "L5_0005",
+    "question": "What is the maximum number of ZCTAs intersecting a single census tract that also intersects FEMA floodplain polygons in Travis County, Texas (identified by the leftmost 5 digits of GEOID 48453 in the census_tract table)?",
+    "sql": "SELECT MAX(zcta_count) AS max_zcta_per_tract FROM (SELECT t.GEOID, COUNT(DISTINCT z.GEOID) AS zcta_count FROM census_tracts t JOIN zcta z ON ST_Intersects(t.geometry, z.geometry) JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='48453' AND ST_IsValid(t.geometry) AND ST_IsValid(z.geometry) AND ST_IsValid(f.geometry) GROUP BY t.GEOID);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='max_zcta_per_tract')",
+    "expected_columns": ["max_zcta_per_tract"]
+  },
+  {
+    "id": "L5_0006",
+    "question": "How many schools are located within both census tract boundaries and FEMA floodplain polygons in Miami-Dade County, Florida (identified by the leftmost 5 digits of GEOID 12086 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT s.UNIQUE_ID) AS num_schools FROM schools s JOIN census_tracts t ON ST_Within(ST_Point(s.LON, s.LAT), t.geometry) JOIN floodplain f ON ST_Within(ST_Point(s.LON, s.LAT), f.geometry) WHERE LEFT(t.GEOID,5)='12086' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_schools')",
+    "expected_columns": ["num_schools"]
+  },
+  {
+    "id": "L5_0007",
+    "question": "What is the total area where FEMA floodplain polygons intersect census tract geometries, considering only tracts that also intersect ZCTA boundaries, in Harris County, Texas (identified by the leftmost 5 digits of GEOID 48201 in the census_tract table)?",
+    "sql": "SELECT SUM(ST_Area(ST_Intersection(f.geometry, t.geometry))) AS total_overlap_area FROM floodplain f JOIN census_tracts t ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='48201' AND t.GEOID IN (SELECT DISTINCT t2.GEOID FROM census_tracts t2 JOIN zcta z ON ST_Intersects(t2.geometry, z.geometry) WHERE LEFT(t2.GEOID,5)='48201' AND ST_IsValid(t2.geometry) AND ST_IsValid(z.geometry)) AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='total_overlap_area')",
+    "expected_columns": ["total_overlap_area"]
+  },
+  {
+    "id": "L5_0008",
+    "question": "How many census tracts partially overlap both FEMA floodplain polygons and ZCTA boundaries in Dallas County, Texas (identified by the leftmost 5 digits of GEOID 48113 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t JOIN floodplain f ON ST_Overlaps(t.geometry, f.geometry) JOIN zcta z ON ST_Overlaps(t.geometry, z.geometry) WHERE LEFT(t.GEOID,5)='48113' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(z.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_tracts')",
+    "expected_columns": ["num_tracts"]
+  },
+  {
+    "id": "L5_0009",
+    "question": "How many hospitals are located within both FEMA floodplain polygons and census tract boundaries in Orleans Parish, Louisiana (identified by the leftmost 5 digits of GEOID 22071 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT h.UNIQUE_ID) AS num_hospitals FROM hospitals h JOIN floodplain f ON ST_Within(ST_Point(h.LON, h.LAT), f.geometry) JOIN census_tracts t ON ST_Within(ST_Point(h.LON, h.LAT), t.geometry) WHERE LEFT(t.GEOID,5)='22071' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_hospitals')",
+    "expected_columns": ["num_hospitals"]
+  },
+  {
+    "id": "L5_0010",
+    "question": "What is the maximum intersection area between a census tract and FEMA floodplain polygons, considering only tracts that also intersect ZCTA geometries, in Palm Beach County, Florida (identified by the leftmost 5 digits of GEOID 12099 in the census_tract table)?",
+    "sql": "SELECT MAX(ST_Area(ST_Intersection(t.geometry, f.geometry))) AS max_overlap_area FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='12099' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND ST_Area(t.geometry) > 0 AND t.GEOID IN (SELECT DISTINCT t2.GEOID FROM census_tracts t2 JOIN zcta z ON ST_Intersects(t2.geometry, z.geometry) WHERE LEFT(t2.GEOID,5)='12099' AND ST_IsValid(t2.geometry) AND ST_IsValid(z.geometry));",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='max_overlap_area')",
+    "expected_columns": ["max_overlap_area"]
+  },
+  {
+    "id": "L5_0011",
+    "question": "Among all ZCTAs in the dataset, what percentage share boundaries with census tracts that intersect FEMA floodplain polygons in Orleans Parish, Louisiana (identified by the leftmost 5 digits of GEOID 22071 in the census_tract table)?",
+    "sql": "SELECT 100.0 * COUNT(DISTINCT z.GEOID) / (SELECT COUNT(*) FROM zcta) AS pct_zcta_touching FROM zcta z JOIN census_tracts t ON ST_Touches(z.geometry, t.geometry) JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='22071' AND ST_IsValid(z.geometry) AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='pct_zcta_touching')",
+    "expected_columns": ["pct_zcta_touching"]
+  },
+  {
+    "id": "L5_0012",
+    "question": "What is the average overlap area between census tracts and FEMA floodplain polygons, considering only tracts that also overlap ZCTA boundaries, in Harris County, Texas (identified by the leftmost 5 digits of GEOID 48201 in the census_tract table)?",
+    "sql": "SELECT AVG(ST_Area(ST_Intersection(t.geometry, f.geometry))) AS avg_overlap_area FROM census_tracts t JOIN floodplain f ON ST_Overlaps(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='48201' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND t.GEOID IN (SELECT DISTINCT t2.GEOID FROM census_tracts t2 JOIN zcta z ON ST_Overlaps(t2.geometry, z.geometry) WHERE LEFT(t2.GEOID,5)='48201' AND ST_IsValid(t2.geometry) AND ST_IsValid(z.geometry));",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='avg_overlap_area')",
+    "expected_columns": ["avg_overlap_area"]
+  },
+  {
+    "id": "L5_0013",
+    "question": "Among ZCTAs that intersect FEMA floodplain polygons and also intersect census tract geometries in Travis County, Texas (identified by the leftmost 5 digits of GEOID 48453), what is the maximum number of distinct floodplain polygons intersecting any single ZCTA?",
+    "sql": "SELECT MAX(floodplain_count) AS max_floodplain_per_zcta FROM (SELECT z.GEOID, COUNT(DISTINCT f.GFID) AS floodplain_count FROM zcta z JOIN floodplain f ON ST_Intersects(z.geometry, f.geometry) JOIN census_tracts t ON ST_Intersects(z.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='48453' AND ST_IsValid(z.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) GROUP BY z.GEOID);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='max_floodplain_per_zcta')",
+    "expected_columns": ["max_floodplain_per_zcta"]
+  },
+  {
+    "id": "L5_0014",
+    "question": "What is the total area of ZCTAs (not just their overlapping or intersection portions) that intersect FEMA floodplain polygons within Broward County, Florida (identified by GEOID 12011 in the county table)?",
+    "sql": "SELECT SUM(ST_Area(z.geometry)) AS total_zcta_area FROM zcta z JOIN county c ON ST_Intersects(z.geometry, c.geometry) WHERE c.GEOID='12011' AND ST_IsValid(z.geometry) AND ST_IsValid(c.geometry) AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(z.geometry, f.geometry) AND ST_IsValid(f.geometry));",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='total_zcta_area')",
+    "expected_columns": ["total_zcta_area"]
+  },
+  {
+    "id": "L5_0015",
+    "question": "What is the average percentage of each census tract's total area that intersects FEMA floodplain polygons, considering only tracts that also intersect ZCTA geometries, in Jefferson Parish, Louisiana (identified by the leftmost 5 digits of GEOID 22051 in the census_tract table)?",
+    "sql": "SELECT AVG((ST_Area(ST_Intersection(t.geometry, f.geometry)) / ST_Area(t.geometry)) * 100) AS avg_overlap_pct FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='22051' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND t.GEOID IN (SELECT DISTINCT t2.GEOID FROM census_tracts t2 JOIN zcta z ON ST_Intersects(t2.geometry, z.geometry) WHERE LEFT(t2.GEOID,5)='22051' AND ST_IsValid(t2.geometry) AND ST_IsValid(z.geometry));",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='avg_overlap_pct')",
+    "expected_columns": ["avg_overlap_pct"]
+  },
+  {
+    "id": "L5_0016",
+    "question": "What is the smallest number of FEMA floodplain polygons intersecting any census tract that also intersects ZCTA geometries in Harris County, Texas (identified by the leftmost 5 digits of GEOID 48201 in the census_tract table)?",
+    "sql": "SELECT MIN(floodplain_count) AS min_floodplain_per_tract FROM (SELECT t.GEOID, COUNT(DISTINCT f.GFID) AS floodplain_count FROM census_tracts t JOIN floodplain f ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='48201' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) AND t.GEOID IN (SELECT DISTINCT t2.GEOID FROM census_tracts t2 JOIN zcta z ON ST_Intersects(t2.geometry, z.geometry) WHERE LEFT(t2.GEOID,5)='48201' AND ST_IsValid(t2.geometry) AND ST_IsValid(z.geometry)) GROUP BY t.GEOID);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='min_floodplain_per_tract')",
+    "expected_columns": ["min_floodplain_per_tract"]
+  },
+  {
+    "id": "L5_0017",
+    "question": "What percentage of census tracts in Dallas County, Texas (identified by the leftmost 5 digits of GEOID 48113 in the census_tract table) intersect both FEMA floodplain polygons and county geometries?",
+    "sql": "SELECT 100.0 * COUNT(DISTINCT t.GEOID) / (SELECT COUNT(*) FROM census_tracts WHERE LEFT(GEOID,5)='48113') AS pct_intersecting FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) JOIN county c ON ST_Intersects(t.geometry, c.geometry) WHERE LEFT(t.GEOID,5)='48113' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(c.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-percentage",
+    "output_type": "scalar(column='pct_intersecting')",
+    "expected_columns": ["pct_intersecting"]
+  },
+  {
+    "id": "L5_0018",
+    "question": "How many ZCTAs intersect both FEMA floodplain polygons and census tract boundaries in Palm Beach County, Florida (identified by the leftmost 5 digits of GEOID 12099 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT z.GEOID) AS num_zcta FROM zcta z JOIN floodplain f ON ST_Intersects(z.geometry, f.geometry) JOIN census_tracts t ON ST_Intersects(z.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='12099' AND ST_IsValid(z.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_zcta')",
+    "expected_columns": ["num_zcta"]
+  },
+  {
+    "id": "L5_0019",
+    "question": "How many distinct FEMA floodplain polygons intersect both county and census tract geometries in Travis County, Texas (identified by the leftmost 5 digits of GEOID 48453 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT f.GFID) AS num_floodplain FROM floodplain f JOIN county c ON ST_Intersects(f.geometry, c.geometry) JOIN census_tracts t ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='48453' AND ST_IsValid(f.geometry) AND ST_IsValid(c.geometry) AND ST_IsValid(t.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_floodplain')",
+    "expected_columns": ["num_floodplain"]
+  },
+  {
+    "id": "L5_0020",
+    "question": "What is the average number of schools located within FEMA floodplain polygons per census tract in Orleans Parish, Louisiana (identified by the leftmost 5 digits of GEOID 22071)?",
+    "sql": "SELECT AVG(school_count) AS avg_schools_per_tract FROM (SELECT t.GEOID, COUNT(DISTINCT s.UNIQUE_ID) AS school_count FROM schools s JOIN floodplain f ON ST_Within(ST_Point(s.LON, s.LAT), f.geometry) JOIN census_tracts t ON ST_Within(ST_Point(s.LON, s.LAT), t.geometry) WHERE LEFT(t.GEOID,5)='22071' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) GROUP BY t.GEOID);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='avg_schools_per_tract')",
+    "expected_columns": ["avg_schools_per_tract"]
+  },
+  {
+    "id": "L5_0021",
+    "question": "How many schools are located within both census tract boundaries and FEMA floodplain polygons in Broward County, Florida (identified by the leftmost 5 digits of GEOID 12011 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT s.UNIQUE_ID) AS num_schools FROM schools s JOIN census_tracts t ON ST_Within(ST_Point(s.LON, s.LAT), t.geometry) JOIN floodplain f ON ST_Within(ST_Point(s.LON, s.LAT), f.geometry) WHERE LEFT(t.GEOID,5)='12011' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_schools')",
+    "expected_columns": ["num_schools"]
+  },
+  {
+    "id": "L5_0022",
+    "question": "How many census tracts overlap FEMA floodplain polygons and touch ZCTA boundaries in Orleans Parish, Louisiana (identified by the leftmost 5 digits of GEOID 22071 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t JOIN floodplain f ON ST_Overlaps(t.geometry, f.geometry) JOIN zcta z ON ST_Touches(t.geometry, z.geometry) WHERE LEFT(t.GEOID,5)='22071' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(z.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_tracts')",
+    "expected_columns": ["num_tracts"]
+  },
+  {
+    "id": "L5_0023",
+    "question": "Across all Texas counties (identified by GEOID prefix 48 in the county table), what is the maximum number of distinct FEMA floodplain polygons that intersect both county and census tract geometries?",
+    "sql": "SELECT MAX(num_floodplain) AS max_floodplain_per_county FROM (SELECT c.GEOID, COUNT(DISTINCT f.GFID) AS num_floodplain FROM floodplain f JOIN county c ON ST_Intersects(f.geometry, c.geometry) JOIN census_tracts t ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(c.GEOID,2)='48' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) AND ST_IsValid(c.geometry) GROUP BY c.GEOID);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='max_floodplain_per_county')",
+    "expected_columns": ["max_floodplain_per_county"]
+  },
+  {
+    "id": "L5_0024",
+    "question": "How many census tracts intersect FEMA floodplain polygons and overlap ZCTA geometries in Miami-Dade County, Florida (identified by the leftmost 5 digits of GEOID 12086 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) JOIN zcta z ON ST_Overlaps(t.geometry, z.geometry) WHERE LEFT(t.GEOID,5)='12086' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(z.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_tracts')",
+    "expected_columns": ["num_tracts"]
+  },
+  {
+    "id": "L5_0025",
+    "question": "How many FEMA floodplain polygons overlap census tract geometries and intersect ZCTA geometries that touch along their shared boundaries in Bexar County, Texas (identified by the leftmost 5 digits of GEOID 48029 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT f.GFID) AS num_floodplain FROM floodplain f JOIN census_tracts t ON ST_Overlaps(f.geometry, t.geometry) JOIN zcta z ON ST_Intersects(f.geometry, z.geometry) WHERE LEFT(t.GEOID,5)='48029' AND ST_Touches(z.geometry, t.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) AND ST_IsValid(z.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_floodplain')",
+    "expected_columns": ["num_floodplain"]
+  },
+  {
+    "id": "L5_0026",
+    "question": "How many census tracts intersect FEMA floodplain polygons and touch ZCTA boundaries in Harris County, Texas (identified by the leftmost 5 digits of GEOID 48201 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) JOIN zcta z ON ST_Touches(t.geometry, z.geometry) WHERE LEFT(t.GEOID,5)='48201' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(z.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_tracts')",
+    "expected_columns": ["num_tracts"]
+  },
+  {
+    "id": "L5_0027",
+    "question": "How many hospitals are located within both FEMA floodplain polygons and census tract boundaries in Travis County, Texas (identified by the leftmost 5 digits of GEOID 48453 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT h.UNIQUE_ID) AS num_hospitals FROM hospitals h JOIN floodplain f ON ST_Within(ST_Point(h.LON, h.LAT), f.geometry) JOIN census_tracts t ON ST_Within(ST_Point(h.LON, h.LAT), t.geometry) WHERE LEFT(t.GEOID,5)='48453' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_hospitals')",
+    "expected_columns": ["num_hospitals"]
+  },
+  {
+    "id": "L5_0028",
+    "question": "What is the average number of FEMA floodplain polygons located entirely within each ZCTA that intersects census tract geometries in Miami-Dade County, Florida (identified by the leftmost 5 digits of GEOID 12086)?",
+    "sql": "SELECT AVG(floodplain_count) AS avg_floodplain_per_zcta FROM (SELECT z.GEOID, COUNT(DISTINCT f.GFID) AS floodplain_count FROM floodplain f JOIN zcta z ON ST_Within(f.geometry, z.geometry) JOIN census_tracts t ON ST_Intersects(z.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='12086' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) AND ST_IsValid(z.geometry) GROUP BY z.GEOID);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='avg_floodplain_per_zcta')",
+    "expected_columns": ["avg_floodplain_per_zcta"]
+  },
+  {
+    "id": "L5_0029",
+    "question": "How many census tracts are completely contained within (excluding boundaries of) county geometries and intersect FEMA floodplain polygons in Orleans Parish, Louisiana (identified by the leftmost 5 digits of GEOID 22071 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t JOIN county c ON ST_Within(t.geometry, c.geometry) JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='22071' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(c.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_tracts')",
+    "expected_columns": ["num_tracts"]
+  },
+  {
+    "id": "L5_0030",
+    "question": "How many FEMA floodplain polygons intersect both county and census tract boundaries in Broward County, Florida (identified by the leftmost 5 digits of GEOID 12011 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT f.GFID) AS num_floodplain FROM floodplain f JOIN county c ON ST_Intersects(f.geometry, c.geometry) JOIN census_tracts t ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='12011' AND ST_IsValid(f.geometry) AND ST_IsValid(c.geometry) AND ST_IsValid(t.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_floodplain')",
+    "expected_columns": ["num_floodplain"]
+  },
+  {
+    "id": "L5_0031",
+    "question": "How many census tracts intersect both FEMA floodplain polygons and county boundaries in Travis County, Texas (identified by the leftmost 5 digits of GEOID 48453 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) JOIN county c ON ST_Intersects(t.geometry, c.geometry) WHERE LEFT(t.GEOID,5)='48453' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(c.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_tracts')",
+    "expected_columns": ["num_tracts"]
+  },
+  {
+    "id": "L5_0032",
+    "question": "How many hospitals are located within both FEMA floodplain polygons and census tract boundaries in East Baton Rouge Parish, Louisiana (identified by the leftmost 5 digits of GEOID 22033 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT h.UNIQUE_ID) AS num_hospitals FROM hospitals h JOIN floodplain f ON ST_Within(ST_Point(h.LON, h.LAT), f.geometry) JOIN census_tracts t ON ST_Within(ST_Point(h.LON, h.LAT), t.geometry) WHERE LEFT(t.GEOID,5)='22033' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_hospitals')",
+    "expected_columns": ["num_hospitals"]
+  },
+  {
+    "id": "L5_0033",
+    "question": "What is the average total intersection area between each census tract and FEMA floodplain polygons, considering only tracts that also intersect ZCTA geometries, in Palm Beach County, Florida (identified by the leftmost 5 digits of GEOID 12099 in the census_tract table)?",
+    "sql": "SELECT AVG(overlap_area) AS avg_overlap_area FROM (SELECT t.GEOID, SUM(ST_Area(ST_Intersection(t.geometry, f.geometry))) AS overlap_area FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='12099' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND t.GEOID IN (SELECT DISTINCT t2.GEOID FROM census_tracts t2 JOIN zcta z ON ST_Intersects(t2.geometry, z.geometry) WHERE LEFT(t2.GEOID,5)='12099' AND ST_IsValid(t2.geometry) AND ST_IsValid(z.geometry)) GROUP BY t.GEOID);",
+    "level": "L5",
+    "category": "triple table spatial-aggregation",
+    "output_type": "scalar(column='avg_overlap_area')",
+    "expected_columns": ["avg_overlap_area"]
+  },
+  {
+    "id": "L5_0034",
+    "question": "How many FEMA floodplain polygons overlap census tract boundaries and intersect county geometries in Dallas County, Texas (identified by the leftmost 5 digits of GEOID 48113 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT f.GFID) AS num_floodplain FROM floodplain f JOIN census_tracts t ON ST_Overlaps(f.geometry, t.geometry) JOIN county c ON ST_Intersects(f.geometry, c.geometry) WHERE LEFT(t.GEOID,5)='48113' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) AND ST_IsValid(c.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_floodplain')",
+    "expected_columns": ["num_floodplain"]
+  },
+  {
+    "id": "L5_0035",
+    "question": "How many hospitals are located within both FEMA floodplain polygons and census tract geometries in Jefferson Parish, Louisiana (identified by the leftmost 5 digits of GEOID 22051 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT h.UNIQUE_ID) AS num_hospitals FROM hospitals h JOIN floodplain f ON ST_Within(ST_Point(h.LON, h.LAT), f.geometry) JOIN census_tracts t ON ST_Within(ST_Point(h.LON, h.LAT), t.geometry) WHERE LEFT(t.GEOID,5)='22051' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_hospitals')",
+    "expected_columns": ["num_hospitals"]
+  },
+  {
+    "id": "L5_0036",
+    "question": "How many FEMA floodplain polygons overlap census tract boundaries and intersect county geometries in Miami-Dade County, Florida (identified by the leftmost 5 digits of GEOID 12086 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT f.GFID) AS num_floodplain FROM floodplain f JOIN census_tracts t ON ST_Overlaps(f.geometry, t.geometry) JOIN county c ON ST_Intersects(f.geometry, c.geometry) WHERE LEFT(t.GEOID,5)='12086' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) AND ST_IsValid(c.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_floodplain')",
+    "expected_columns": ["num_floodplain"]
+  },
+  {
+    "id": "L5_0037",
+    "question": "How many FEMA floodplain polygons intersect county boundaries and census tract geometries in Harris County, Texas (identified by the leftmost 5 digits of GEOID 48201 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT f.GFID) AS num_floodplain FROM floodplain f JOIN county c ON ST_Intersects(f.geometry, c.geometry) JOIN census_tracts t ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='48201' AND ST_IsValid(f.geometry) AND ST_IsValid(c.geometry) AND ST_IsValid(t.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_floodplain')",
+    "expected_columns": ["num_floodplain"]
+  },
+  {
+    "id": "L5_0038",
+    "question": "How many census tracts touch ZCTA boundaries and intersect FEMA floodplain polygons in Dallas County, Texas (identified by the leftmost 5 digits of GEOID 48113 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t JOIN zcta z ON ST_Touches(t.geometry, z.geometry) JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='48113' AND ST_IsValid(t.geometry) AND ST_IsValid(z.geometry) AND ST_IsValid(f.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_tracts')",
+    "expected_columns": ["num_tracts"]
+  },
+  {
+    "id": "L5_0039",
+    "question": "How many ZCTAs intersect both FEMA floodplain polygons and county boundaries in Orleans Parish, Louisiana (identified by GEOID 22071 in the county table)?",
+    "sql": "SELECT COUNT(DISTINCT z.GEOID) AS num_zcta FROM zcta z JOIN floodplain f ON ST_Intersects(z.geometry, f.geometry) JOIN county c ON ST_Intersects(z.geometry, c.geometry) WHERE c.GEOID='22071' AND ST_IsValid(z.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(c.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_zcta')",
+    "expected_columns": ["num_zcta"]
+  },
+  {
+    "id": "L5_0040",
+    "question": "How many census tracts intersect both FEMA floodplain polygons and ZCTA geometries in Travis County, Texas (identified by the leftmost 5 digits of GEOID 48453 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) JOIN zcta z ON ST_Intersects(t.geometry, z.geometry) WHERE LEFT(t.GEOID,5)='48453' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(z.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_tracts')",
+    "expected_columns": ["num_tracts"]
+  },
+  {
+    "id": "L5_0041",
+    "question": "What is the maximum number of schools located within any single census tract in Palm Beach County, Florida (identified by the leftmost 5 digits of GEOID 12099), considering only schools that lie inside FEMA floodplain polygons?",
+    "sql": "SELECT MAX(num_schools) AS max_schools_in_tract FROM (SELECT t.GEOID, COUNT(DISTINCT s.UNIQUE_ID) AS num_schools FROM schools s JOIN floodplain f ON ST_Within(ST_Point(s.LON, s.LAT), f.geometry) JOIN census_tracts t ON ST_Within(ST_Point(s.LON, s.LAT), t.geometry) WHERE LEFT(t.GEOID,5)='12099' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) GROUP BY t.GEOID);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='max_schools_in_tract')",
+    "expected_columns": ["max_schools_in_tract"]
+  },
+  {
+    "id": "L5_0042",
+    "question": "How many FEMA floodplain polygons overlap census tract geometries and touch ZCTA boundaries in Jefferson Parish, Louisiana (identified by the leftmost 5 digits of GEOID 22051 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT f.GFID) AS num_floodplain FROM floodplain f JOIN census_tracts t ON ST_Overlaps(f.geometry, t.geometry) JOIN zcta z ON ST_Touches(t.geometry, z.geometry) WHERE LEFT(t.GEOID,5)='22051' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) AND ST_IsValid(z.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_floodplain')",
+    "expected_columns": ["num_floodplain"]
+  },
+  {
+    "id": "L5_0043",
+    "question": "How many FEMA floodplain polygons intersect both census tract and ZCTA geometries in Miami-Dade County, Florida (identified by the leftmost 5 digits of GEOID 12086 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT f.GFID) AS num_floodplain FROM floodplain f JOIN census_tracts t ON ST_Intersects(f.geometry, t.geometry) JOIN zcta z ON ST_Intersects(f.geometry, z.geometry) WHERE LEFT(t.GEOID,5)='12086' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) AND ST_IsValid(z.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_floodplain')",
+    "expected_columns": ["num_floodplain"]
+  },
+  {
+    "id": "L5_0044",
+    "question": "How many ZCTAs intersect both FEMA floodplain polygons and county boundaries in Dallas County, Texas (identified by GEOID 48113 in the county table)?",
+    "sql": "SELECT COUNT(DISTINCT z.GEOID) AS num_zcta FROM zcta z JOIN floodplain f ON ST_Intersects(z.geometry, f.geometry) JOIN county c ON ST_Intersects(z.geometry, c.geometry) WHERE c.GEOID='48113' AND ST_IsValid(z.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(c.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_zcta')",
+    "expected_columns": ["num_zcta"]
+  },
+  {
+    "id": "L5_0045",
+    "question": "How many census tracts touch ZCTA boundaries and intersect FEMA floodplain polygons in Harris County, Texas (identified by the leftmost 5 digits of GEOID 48201 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t JOIN zcta z ON ST_Touches(t.geometry, z.geometry) JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='48201' AND ST_IsValid(t.geometry) AND ST_IsValid(z.geometry) AND ST_IsValid(f.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_tracts')",
+    "expected_columns": ["num_tracts"]
+  },
+  {
+    "id": "L5_0046",
+    "question": "How many FEMA floodplain polygons overlap census tract boundaries and intersect county geometries in Orleans Parish, Louisiana (identified by the leftmost 5 digits of GEOID 22071 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT f.GFID) AS num_floodplain FROM floodplain f JOIN census_tracts t ON ST_Overlaps(f.geometry, t.geometry) JOIN county c ON ST_Intersects(f.geometry, c.geometry) WHERE LEFT(t.GEOID,5)='22071' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) AND ST_IsValid(c.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_floodplain')",
+    "expected_columns": ["num_floodplain"]
+  },
+  {
+    "id": "L5_0047",
+    "question": "What percentage of all census tracts in Travis County, Texas (identified by the leftmost 5 digits of GEOID 48453) touch a ZCTA boundary and intersect a FEMA floodplain polygon?",
+    "sql": "SELECT 100.0 * COUNT(DISTINCT t.GEOID) / (SELECT COUNT(*) FROM census_tracts WHERE LEFT(GEOID,5)='48453') AS pct_affected FROM census_tracts t JOIN zcta z ON ST_Touches(t.geometry, z.geometry) JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='48453' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(z.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-percentage",
+    "output_type": "scalar(column='pct_affected')",
+    "expected_columns": ["pct_affected"]
+  },
+  {
+    "id": "L5_0048",
+    "question": "How many hospitals are located within both FEMA floodplain polygons and census tract boundaries in Harris County, Texas (identified by the leftmost 5 digits of GEOID 48201 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT h.UNIQUE_ID) AS num_hospitals FROM hospitals h JOIN floodplain f ON ST_Within(ST_Point(h.LON, h.LAT), f.geometry) JOIN census_tracts t ON ST_Within(ST_Point(h.LON, h.LAT), t.geometry) WHERE LEFT(t.GEOID,5)='48201' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_hospitals')",
+    "expected_columns": ["num_hospitals"]
+  },
+  {
+    "id": "L5_0049",
+    "question": "How many census tracts intersect FEMA floodplain polygons and touch ZCTA boundaries in Jefferson Parish, Louisiana (identified by the leftmost 5 digits of GEOID 22051 in the census_tract table)?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) JOIN zcta z ON ST_Touches(t.geometry, z.geometry) WHERE LEFT(t.GEOID,5)='22051' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(z.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_tracts')",
+    "expected_columns": ["num_tracts"]
+  },
+  {
+    "id": "L5_0050",
+    "question": "How many FEMA floodplain polygons intersect both ZCTA geometries and county boundaries in Harris County, Texas (identified by GEOID 48201 in the county table)?",
+    "sql": "SELECT COUNT(DISTINCT f.GFID) AS num_floodplain FROM floodplain f JOIN zcta z ON ST_Intersects(f.geometry, z.geometry) JOIN county c ON ST_Intersects(f.geometry, c.geometry) WHERE c.GEOID='48201' AND ST_IsValid(f.geometry) AND ST_IsValid(z.geometry) AND ST_IsValid(c.geometry);",
+    "level": "L5",
+    "category": "triple table spatial-spatial",
+    "output_type": "scalar(column='num_floodplain')",
+    "expected_columns": ["num_floodplain"]
+  }
+]

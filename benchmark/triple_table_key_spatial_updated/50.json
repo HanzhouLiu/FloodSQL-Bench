@@ -1,0 +1,391 @@
+[
+  {
+    "id": "L4_0001",
+    "question": "What is the average Relative percentile for Theme 1 (Socioeconomic) for census tracts in Texas (STATEFP 48) that intersect a FEMA floodplain polygon?",
+    "sql": "SELECT AVG(v.RPL_THEME1) AS avg_theme1_rank FROM svi v JOIN census_tracts t ON v.GEOID = t.GEOID JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE t.STATEFP='48' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND v.RPL_THEME1 IS NOT NULL AND v.RPL_THEME1 BETWEEN 0 AND 100;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_theme1_rank')",
+    "expected_columns": ["avg_theme1_rank"]
+  },
+  {
+    "id": "L4_0002",
+    "question": "Which 5 Florida (STATEFP 12) counties have the highest number of hospitals located inside floodplain zones? Return their names.",
+    "sql": "SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON LEFT(h.COUNTYFIPS,5)=c.GEOID JOIN floodplain f ON ST_Contains(f.geometry, ST_Point(h.LON, h.LAT)) WHERE c.STATEFP='12' AND ST_IsValid(f.geometry) AND ST_IsValid(c.geometry) GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 5;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L4_0003",
+    "question": "What is the average Normalized coastal flood risk score for all census tracts within Orleans Parish, Louisiana (STATEFP 22, COUNTY NAME 'ORLEANS') that contain at least one hospital?",
+    "sql": "SELECT AVG(n.CFLD_RISKS) AS avg_coastal_risk_score FROM hospitals h JOIN county c ON ST_Contains(c.geometry, ST_Point(h.LON, h.LAT)) JOIN nri n ON LEFT(n.GEOID, 5) = c.GEOID WHERE c.NAME = 'ORLEANS' AND c.STATEFP = '22' AND n.CFLD_RISKS IS NOT NULL AND ST_IsValid(c.geometry);",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_coastal_risk_score')",
+    "expected_columns": ["avg_coastal_risk_score"]
+  },
+  {
+    "id": "L4_0004",
+    "question": "Which 5 Texas (STATEFP 48) counties have the highest average Overall summary percentile rank for all four SVI themes combined among census tracts that intersect FEMA floodplain areas? Return their names.",
+    "sql": "SELECT c.NAME AS county_name FROM county c JOIN census_tracts t ON LEFT(t.GEOID,5)=c.GEOID JOIN svi s ON s.FIPS=t.GEOID JOIN floodplain f ON ST_Intersects(t.geometry,f.geometry) WHERE c.STATEFP='48' AND s.SPL_THEMES IS NOT NULL AND s.SPL_THEMES BETWEEN 0 AND 100 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) GROUP BY c.NAME ORDER BY AVG(s.SPL_THEMES) DESC LIMIT 5;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L4_0005",
+    "question": "Which 5 Texas (STATEFP 12) counties have the highest number of hospitals located inside floodplain zones? Return their names.",
+    "sql": "SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON LEFT(h.COUNTYFIPS,5)=c.GEOID JOIN floodplain f ON ST_Contains(f.geometry, ST_Point(h.LON, h.LAT)) WHERE c.STATEFP='12' AND ST_IsValid(f.geometry) AND ST_IsValid(c.geometry) GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 5;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L4_0006",
+    "question": "For Louisiana (STATEFP 22), which 5 counties contain the largest number of schools located in floodplain areas?",
+    "sql": "SELECT c.NAME AS county_name FROM schools s JOIN county c ON s.STATEFP=c.STATEFP WHERE c.STATEFP='22' AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Contains(f.geometry, ST_Point(s.LON, s.LAT)) AND ST_IsValid(f.geometry)) GROUP BY c.NAME ORDER BY COUNT(DISTINCT s.SCHOOL_ID) DESC LIMIT 5;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L4_0007",
+    "question": "In Texas (STATEFP 48), how many census tracts with Percentage of individuals with three plus components of social vulnerability higher than 40 intersect FEMA floodplain polygons?",
+    "sql": "SELECT COUNT(*) AS num_high_vuln_tracts FROM cre r JOIN census_tracts t ON r.GEOID=t.GEOID JOIN floodplain f ON ST_Intersects(f.geometry,t.geometry) WHERE LEFT(t.GEOID,2)='48' AND r.PRED3_PE>40 AND r.PRED3_PE BETWEEN 0 AND 100 AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry);",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='num_high_vuln_tracts')",
+    "expected_columns": ["num_high_vuln_tracts"]
+  },
+  {
+    "id": "L4_0008",
+    "question": "In Florida (STATEFP 12), how many census tracts with Riverine Flood Risk Score greater than 70 intersect FEMA floodplain polygons?",
+    "sql": "SELECT COUNT(*) AS num_high_risk_tracts FROM nri n JOIN census_tracts t ON n.GEOID=t.GEOID JOIN floodplain f ON ST_Intersects(f.geometry,t.geometry) WHERE LEFT(t.GEOID,2)='12' AND n.RFLD_RISKS>70 AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry);",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='num_high_risk_tracts')",
+    "expected_columns": ["num_high_risk_tracts"]
+  },
+  {
+    "id": "L4_0009",
+    "question": "In Orleans Parish (in Louisiana, identified by the left most 5 digits of GEOID, 22071), how many local floodplain polygons intersect census tracts that have NFIP claims?",
+    "sql": "SELECT COUNT(DISTINCT f.GFID) AS num_intersecting_floodplains FROM floodplain f JOIN census_tracts t ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='22071' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) AND EXISTS (SELECT 1 FROM claims cl WHERE cl.GEOID=t.GEOID);",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='num_intersecting_floodplains')",
+    "expected_columns": ["num_intersecting_floodplains"]
+  },
+  {
+    "id": "L4_0010",
+    "question": "In Texas (STATEFP 48), which city has the highest number of unique schools located within a county where the Normalized riverine flood risk score is greater than 50? Return its city name in uppercase.",
+    "sql": "SELECT s.CITY AS city_name FROM schools s JOIN county c ON ST_Contains(c.geometry, ST_Point(s.LON, s.LAT)) JOIN nri n ON LEFT(n.GEOID, 5) = c.GEOID WHERE s.STATEFP='48' AND n.RFLD_RISKS > 50 AND ST_IsValid(c.geometry) GROUP BY s.CITY ORDER BY COUNT(DISTINCT s.SCHOOL_ID) DESC LIMIT 1;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='city_name')",
+    "expected_columns": ["city_name"]
+  },
+  {
+    "id": "L4_0011",
+    "question": "For Florida (STATEFP 12), what is the average Insurance payout amount (in USD) for structural building damage across all census tracts within counties that contain at least one hospital located inside a FEMA floodplain polygon?",
+    "sql": "SELECT AVG(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) AS avg_county_building_claim FROM hospitals h JOIN floodplain f ON ST_Contains(f.geometry, ST_Point(h.LON, h.LAT)) JOIN claims cl ON LEFT(cl.GEOID, 5) = h.COUNTYFIPS WHERE h.STATEFP='12' AND ST_IsValid(f.geometry) AND cl.amountPaidOnBuildingClaim IS NOT NULL;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_county_building_claim')",
+    "expected_columns": ["avg_county_building_claim"]
+  },
+  {
+    "id": "L4_0012",
+    "question": "In Louisiana (STATEFP 22), which 5 counties have the largest number of schools located in census tracts intersecting FEMA floodplain zones?",
+    "sql": "SELECT c.NAME AS county_name FROM schools s JOIN census_tracts t ON ST_Contains(t.geometry, ST_Point(s.LON, s.LAT)) JOIN county c ON LEFT(t.GEOID,5)=c.GEOID JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE c.STATEFP='22' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) GROUP BY c.NAME ORDER BY COUNT(DISTINCT s.SCHOOL_ID) DESC LIMIT 5;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  }, 
+  {
+    "id": "L4_0013",
+    "question": "For Florida (STATEFP 12), what is the average relative percentile rank for Summary percentile rank for Theme 1 across all census tracts that contain at least one hospital?",
+    "sql": "SELECT AVG(s.SPL_THEME1) AS avg_svi_theme1 FROM hospitals h JOIN census_tracts t ON ST_Contains(t.geometry, ST_Point(h.LON, h.LAT)) JOIN svi s ON t.GEOID = s.GEOID WHERE h.STATEFP='12' AND ST_IsValid(t.geometry) AND s.SPL_THEME1 IS NOT NULL AND s.SPL_THEME1 BETWEEN 0 AND 100;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_svi_theme1')",
+    "expected_columns": [
+        "avg_svi_theme1"
+    ]
+  },
+  {
+    "id": "L4_0014",
+    "question": "Among Florida counties (STATEFP 12), which has the greatest number of low-resilience tracts (percentage of individuals with zero components of social vulnerability lower than 10) that intersect FEMA floodplain areas? Return its county name.",
+    "sql": "SELECT c.NAME AS county_name FROM cre r JOIN census_tracts t ON r.GEOID=t.GEOID JOIN county c ON LEFT(t.GEOID,5)=c.GEOID JOIN floodplain f ON ST_Intersects(t.geometry,f.geometry) WHERE c.STATEFP='12' AND r.PRED0_PE<10 AND r.PRED0_PE BETWEEN 0 AND 100 AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 1;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L4_0015",
+    "question": "In Louisiana (STATEFP 22), what is the maximum Insurance payout amount (in USD) for structural building damage (amountPaidOnContentsClaim) across all census tracts that contain at least one hospital?",
+    "sql": "SELECT MAX(CAST(cl.amountPaidOnContentsClaim AS DOUBLE)) AS max_building_claim FROM hospitals h JOIN census_tracts t ON ST_Contains(t.geometry, ST_Point(h.LON, h.LAT)) JOIN claims cl ON cl.GEOID = t.GEOID WHERE h.STATEFP='22' AND ST_IsValid(t.geometry) AND cl.amountPaidOnContentsClaim IS NOT NULL;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='max_building_claim')",
+    "expected_columns": ["max_building_claim"]
+  },
+  {
+    "id": "L4_0016",
+    "question": "In Texas (STATEFP 48), which county has the highest total Riverine Flooding Expected Annual Loss for Buildings within FEMA floodplain regions? Return its county name.",
+    "sql": "SELECT c.NAME AS county_name FROM nri n JOIN census_tracts t ON n.GEOID=t.GEOID JOIN county c ON LEFT(t.GEOID,5)=c.GEOID JOIN floodplain f ON ST_Intersects(f.geometry, t.geometry) WHERE c.STATEFP='48' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) GROUP BY c.NAME ORDER BY SUM(n.RFLD_EALB) DESC LIMIT 1;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L4_0017",
+    "question": "In Orleans Parish, Louisiana (GEOID prefix 22071), what is the average Underlying continuous numeric riverine flood risk value used to derive the categorical rating and normalized score for all census tracts that intersect FEMA floodplain polygons?",
+    "sql": "SELECT AVG(n.RFLD_RISKV) AS avg_riverine_risk FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) JOIN nri n ON t.GEOID = n.GEOID WHERE LEFT(t.GEOID, 5) = '22071' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND n.RFLD_RISKV IS NOT NULL;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_riverine_risk')",
+    "expected_columns": ["avg_riverine_risk"]
+  },
+  {
+    "id": "L4_0018",
+    "question": "In Louisiana (STATEFP 22), which 2 counties have the most schools located inside both FEMA floodplain and ZCTA polygons? Return their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM schools s JOIN county c ON c.STATEFP='22' AND ST_Contains(c.geometry, ST_Point(s.LON, s.LAT)) WHERE EXISTS (SELECT 1 FROM zcta z JOIN floodplain f ON ST_Intersects(f.geometry, z.geometry) WHERE ST_Contains(z.geometry, ST_Point(s.LON, s.LAT)) AND ST_IsValid(f.geometry) AND ST_IsValid(z.geometry)) AND ST_IsValid(c.geometry) GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 2;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L4_0019",
+    "question": "In Texas (STATEFP 48), what is the average percentage of individuals with three or more components of social vulnerability among census tracts that intersect FEMA floodplain polygons?",
+    "sql": "SELECT AVG(r.PRED3_PE) AS avg_high_vulnerability FROM cre r JOIN census_tracts t ON r.GEOID=t.GEOID JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE t.STATEFP ='48' AND r.PRED3_PE BETWEEN 0 AND 100 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_high_vulnerability')",
+    "expected_columns": ["avg_high_vulnerability"]
+  },
+  {
+    "id": "L4_0020",
+    "question": "Which 5 Florida (STATEFP 12) counties have the largest number of hospitals located within FEMA floodplain regions that overlap census tract boundaries?",
+    "sql": "SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON LEFT(h.COUNTYFIPS,5)=c.GEOID JOIN floodplain f ON ST_Contains(f.geometry, ST_Point(h.LON, h.LAT)) JOIN census_tracts t ON ST_Intersects(f.geometry, t.geometry) WHERE c.STATEFP='12' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) GROUP BY c.NAME ORDER BY COUNT(DISTINCT h.HOSPITAL_ID) DESC LIMIT 5;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L4_0021",
+    "question": "In Orleans Parish (Louisiana, GEOID 22071), what is the average relative percentile rank for Relative percentile for Theme 4 (Housing & Transportation) (RPL_THEME4) across all census tracts that contain at least one school?",
+    "sql": "SELECT AVG(v.RPL_THEME4) AS avg_housing_vulnerability FROM schools s JOIN census_tracts t ON ST_Contains(t.geometry, ST_Point(s.LON, s.LAT)) JOIN svi v ON t.GEOID = v.GEOID WHERE LEFT(t.GEOID, 5) = '22071' AND ST_IsValid(t.geometry) AND v.RPL_THEME4 IS NOT NULL AND v.RPL_THEME4 BETWEEN 0 AND 100;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_housing_vulnerability')",
+    "expected_columns": ["avg_housing_vulnerability"]
+  },
+  {
+    "id": "L4_0022",
+    "question": "In Louisiana (STATEFP 22), what is the average Riverine Flooding Expected Area Exposure among census tracts that intersect FEMA floodplain polygons?",
+    "sql": "SELECT AVG(n.RFLD_EXP_AREA) AS avg_exposed_area FROM nri n JOIN census_tracts t ON n.GEOID=t.GEOID WHERE LEFT(t.GEOID,2)='22' AND n.RFLD_EXP_AREA BETWEEN 0 AND 1e9 AND ST_IsValid(t.geometry) AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(t.geometry, f.geometry) AND ST_IsValid(f.geometry));",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_exposed_area')",
+    "expected_columns": ["avg_exposed_area"]
+  },
+  {
+    "id": "L4_0023",
+    "question": "In Florida (STATEFP 12), what is the average number of Riverine Flooding events among census tracts that intersect FEMA floodplain polygons?",
+    "sql": "SELECT AVG(n.RFLD_EVNTS) AS avg_flood_events FROM nri n JOIN census_tracts t ON n.GEOID=t.GEOID WHERE LEFT(t.GEOID,2)='12' AND n.RFLD_EVNTS BETWEEN 0 AND 1000 AND ST_IsValid(t.geometry) AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(f.geometry,t.geometry) AND ST_IsValid(f.geometry));",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_flood_events')",
+    "expected_columns": ["avg_flood_events"]
+  },
+  {
+    "id": "L4_0024",
+    "question": "In Louisiana (STATEFP 22), which 3 counties contain the largest number of hospitals located within FEMA floodplain polygons? Return their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON LEFT(h.COUNTYFIPS,5)=c.GEOID WHERE c.STATEFP='22' AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Contains(f.geometry, ST_Point(h.LON, h.LAT)) AND ST_IsValid(f.geometry)) GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 3;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L4_0025",
+    "question": "Which 5 Texas (STATEFP 48) counties have the highest number of schools located within FEMA floodplain polygons? Return their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM schools s JOIN county c ON LEFT(s.STATEFP,2)=c.STATEFP AND ST_Contains(c.geometry, ST_Point(s.LON, s.LAT)) JOIN floodplain f ON ST_Contains(f.geometry, ST_Point(s.LON, s.LAT)) WHERE c.STATEFP='48' AND ST_IsValid(c.geometry) AND ST_IsValid(f.geometry) GROUP BY c.NAME ORDER BY COUNT(DISTINCT s.SCHOOL_ID) DESC LIMIT 5;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L4_0026",
+    "question": "In Harris County, Texas (GEOID prefix 48201), what is the average Overall relative vulnerability percentile across all themes across all census tracts that contain at least one school?",
+    "sql": "SELECT AVG(v.RPL_THEMES) AS avg_overall_vulnerability FROM schools s JOIN census_tracts t ON ST_Contains(t.geometry, ST_Point(s.LON, s.LAT)) JOIN svi v ON t.GEOID = v.GEOID WHERE LEFT(t.GEOID, 5) = '48201' AND ST_IsValid(t.geometry) AND v.RPL_THEMES IS NOT NULL AND v.RPL_THEMES BETWEEN 0 AND 100;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_overall_vulnerability')",
+    "expected_columns": ["avg_overall_vulnerability"]
+  },
+  {
+    "id": "L4_0027",
+    "question": "In Florida (STATEFP 12), what is the average population universe of census tracts that intersect FEMA floodplain polygons?",
+    "sql": "SELECT AVG(r.POPUNI) AS avg_population_universe FROM cre r JOIN (SELECT DISTINCT t.GEOID FROM census_tracts t JOIN floodplain f ON ST_Intersects(f.geometry,t.geometry) WHERE LEFT(t.GEOID,2)='12' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry)) t2 ON r.GEOID=t2.GEOID;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_population_universe')",
+    "expected_columns": ["avg_population_universe"]
+  },
+  {
+    "id": "L4_0028",
+    "question": "In Texas (STATEFP 48), what is the average population universe of census tracts that intersect FEMA floodplain polygons?",
+    "sql": "SELECT AVG(r.POPUNI) AS avg_population_universe FROM cre r JOIN (SELECT DISTINCT t.GEOID FROM census_tracts t JOIN floodplain f ON ST_Intersects(f.geometry,t.geometry) WHERE LEFT(t.GEOID,2)='48' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry)) t2 ON r.GEOID=t2.GEOID;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_population_universe')",
+    "expected_columns": ["avg_population_universe"]
+  },
+  {
+    "id": "L4_0029",
+    "question": "In Travis County, Texas (GEOID 48453), what is the total Insurance payout amount (in USD) for structural building damage for all NFIP flood claims recorded within that county, contingent on the county boundary also containing at least one hospital?",
+    "sql": "SELECT SUM(CAST(l.amountPaidOnBuildingClaim AS DOUBLE)) AS total_claims_paid FROM hospitals h JOIN county c ON ST_Contains(c.geometry, ST_Point(h.LON, h.LAT)) JOIN claims l ON LEFT(l.GEOID, 5) = c.GEOID WHERE c.GEOID = '48453' AND ST_IsValid(c.geometry) AND l.amountPaidOnBuildingClaim IS NOT NULL;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='total_claims_paid')",
+    "expected_columns": ["total_claims_paid"]
+  },
+  {
+    "id": "L4_0030",
+    "question": "In Orleans Parish (Louisiana, GEOID 22071), how many census tracts have NFIP claims and intersect any FEMA floodplain polygons?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_claim_tracts FROM census_tracts t WHERE LEFT(t.GEOID,5)='22071' AND EXISTS (SELECT 1 FROM claims cl WHERE cl.GEOID=t.GEOID) AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(f.geometry, t.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry));",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='num_claim_tracts')",
+    "expected_columns": ["num_claim_tracts"]
+  },
+  {
+    "id": "L4_0031",
+    "question": "In Miami-Dade County (Florida, GEOID 12086), what is the average overall relative vulnerability percentile across all themes for census tracts that intersect any FEMA floodplain polygons?",
+    "sql": "SELECT AVG(v.RPL_THEMES) AS avg_svi_for_flooded_tracts FROM census_tracts t JOIN svi v ON t.GEOID = v.GEOID WHERE LEFT(t.GEOID,5)='12086' AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(f.geometry, t.geometry) AND ST_IsValid(f.geometry)) AND v.RPL_THEMES IS NOT NULL AND v.RPL_THEMES BETWEEN 0 AND 100;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_svi_for_flooded_tracts')",
+    "expected_columns": ["avg_svi_for_flooded_tracts"]
+  },
+  {
+    "id": "L4_0032",
+    "question": "In Dallas County, Texas (GEOID 48113), what is the total Expected annual loss for buildings caused by riverine flooding (USD) across all census tracts within that county, contingent on the county boundary also containing at least one hospital?",
+    "sql": "SELECT SUM(n.RFLD_EALB) AS total_expected_loss FROM nri n JOIN county c ON LEFT(n.GEOID, 5) = c.GEOID WHERE c.GEOID = '48113' AND n.RFLD_EALB IS NOT NULL AND EXISTS (SELECT 1 FROM hospitals h WHERE ST_Contains(c.geometry, ST_Point(h.LON, h.LAT)));",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='total_expected_loss')",
+    "expected_columns": ["total_expected_loss"]
+  },
+  {
+    "id": "L4_0033",
+    "question": "In Broward County, Florida (GEOID 12011), how many census tracts with Estimated percent of population below 150% poverty line above 25% intersect FEMA floodplain polygons?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_high_poverty_tracts FROM svi s JOIN census_tracts t ON s.FIPS=t.GEOID JOIN floodplain f ON ST_Intersects(t.geometry,f.geometry) WHERE LEFT(t.GEOID,5)='12011' AND s.EP_POV150 BETWEEN 0 AND 100 AND s.EP_POV150>25 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='num_high_poverty_tracts')",
+    "expected_columns": ["num_high_poverty_tracts"]
+  },
+  {
+    "id": "L4_0034",
+    "question": "In Jefferson Parish, Louisiana (GEOID 22051), what is the total Insurance payout amount (in USD) for structural building damage for all NFIP flood claims recorded in that county, contingent on the county boundary also containing at least one hospital?",
+    "sql": "SELECT SUM(CAST(l.amountPaidOnBuildingClaim AS DOUBLE)) AS total_claims_paid FROM hospitals h JOIN county c ON ST_Contains(c.geometry, ST_Point(h.LON, h.LAT)) JOIN claims l ON LEFT(l.GEOID, 5) = c.GEOID WHERE c.GEOID = '22051' AND ST_IsValid(c.geometry) AND l.amountPaidOnBuildingClaim IS NOT NULL;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='total_claims_paid')",
+    "expected_columns": ["total_claims_paid"]
+  },
+  {
+    "id": "L4_0035",
+    "question": "In Florida (STATEFP 12), what is the total estimated population in census tracts that intersect FEMA floodplain polygons?",
+    "sql": "WITH affected_tracts AS (SELECT DISTINCT t.GEOID FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,2)='12' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry)) SELECT SUM(s.E_TOTPOP) AS total_population FROM affected_tracts a JOIN svi s ON s.FIPS=a.GEOID WHERE s.E_TOTPOP IS NOT NULL;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='total_population')",
+    "expected_columns": ["total_population"]
+  },
+  {
+    "id": "L4_0036",
+    "question": "In Tampa area (Hillsborough County, GEOID 12057), what is the total Population universe used in tract-level resilience estimation for census tracts that intersect FEMA floodplain polygons?",
+    "sql": "SELECT SUM(r.POPUNI) AS total_population_universe FROM census_tracts t JOIN cre r ON t.GEOID=r.GEOID WHERE LEFT(t.GEOID,5)='12057' AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(t.geometry, f.geometry) AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry)) AND r.POPUNI IS NOT NULL;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='total_population_universe')",
+    "expected_columns": ["total_population_universe"]
+  },
+  {
+    "id": "L4_0037",
+    "question": "In Baton Rouge (East Baton Rouge Parish, GEOID 22033), what is the average estimated total population for census tracts that contain at least one hospital?",
+    "sql": "SELECT AVG(s.E_TOTPOP) AS avg_population_in_hospital_tracts FROM census_tracts t JOIN svi s ON t.GEOID = s.GEOID WHERE LEFT(t.GEOID,5)='22033' AND EXISTS (SELECT 1 FROM hospitals h WHERE ST_Contains(t.geometry, ST_Point(h.LON, h.LAT))) AND s.E_TOTPOP IS NOT NULL;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_population_in_hospital_tracts')",
+    "expected_columns": ["avg_population_in_hospital_tracts"]
+  },
+  {
+    "id": "L4_0038",
+    "question": "In Dallas County, Texas (GEOID 48113), how many census tracts with NFIP claims intersect floodplain areas?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t WHERE LEFT(t.GEOID,5)='48113' AND EXISTS (SELECT 1 FROM claims cl WHERE cl.GEOID=t.GEOID) AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(t.geometry, f.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry));",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='num_tracts')",
+    "expected_columns": ["num_tracts"]
+  },
+  {
+    "id": "L4_0039",
+    "question": "In Louisiana (STATEFP 22), what is the average percentage of population with three or more social vulnerability components among tracts that intersect FEMA floodplain polygons?",
+    "sql": "SELECT AVG(r.PRED3_PE) AS avg_high_vulnerability_pct FROM cre r JOIN census_tracts t ON r.GEOID=t.GEOID JOIN floodplain f ON ST_Intersects(t.geometry,f.geometry) WHERE LEFT(t.GEOID,2)='22' AND r.PRED3_PE BETWEEN 0 AND 100;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_high_vulnerability_pct')",
+    "expected_columns": ["avg_high_vulnerability_pct"]
+  },
+  {
+    "id": "L4_0040",
+    "question": "In Harris County, Texas (GEOID 48201), how many census tracts with limited English proficiency above 10% (EP_LIMENG > 10) intersect FEMA floodplain areas?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_limited_english_tracts FROM svi s JOIN census_tracts t ON s.FIPS=t.GEOID JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='48201' AND s.EP_LIMENG BETWEEN 0 AND 100 AND s.EP_LIMENG > 10 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='num_limited_english_tracts')",
+    "expected_columns": ["num_limited_english_tracts"]
+  },
+  {
+    "id": "L4_0041",
+    "question": "In Texas (STATEFP 48), what is the average Riverine Flood Expected Annual Loss for buildings (RFLD_EALB) among census tracts that intersect FEMA floodplain polygons?",
+    "sql": "SELECT AVG(sub.RFLD_EALB) AS avg_building_loss FROM (SELECT DISTINCT n.GEOID, n.RFLD_EALB FROM nri n JOIN census_tracts t ON n.GEOID=t.GEOID JOIN floodplain f ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,2)='48' AND n.RFLD_EALB BETWEEN 0 AND 1e9 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry)) AS sub;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_building_loss')",
+    "expected_columns": ["avg_building_loss"]
+  },
+  {
+    "id": "L4_0042",
+    "question": "In Harris County, Texas (GEOID 48201), how many census tracts with estimated percent of minority population above 60 intersect FEMA floodplain polygons?",
+    "sql": "SELECT COUNT(DISTINCT t.GEOID) AS num_minority_tracts FROM svi s JOIN census_tracts t ON s.FIPS=t.GEOID JOIN floodplain f ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='48201' AND s.EP_MINRTY BETWEEN 0 AND 100 AND s.EP_MINRTY>60 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='num_minority_tracts')",
+    "expected_columns": ["num_minority_tracts"]
+  },
+  {
+    "id": "L4_0043",
+    "question": "In Florida (STATEFP 12), what is the average estimated percent unemployed among census tracts that intersect FEMA floodplain polygons?",
+    "sql": "SELECT AVG(sub.EP_UNEMP) AS avg_unemployment FROM (SELECT DISTINCT s.FIPS, s.EP_UNEMP FROM svi s JOIN census_tracts t ON s.FIPS=t.GEOID JOIN floodplain f ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,2)='12' AND s.EP_UNEMP BETWEEN 0 AND 100 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry)) AS sub;",
+    "level": "L4",
+    "category": "triple table key-spatial",
+    "output_type": "scalar(column='avg_unemployment')",
+    "expected_columns": ["avg_unemployment"]
+  }
+]

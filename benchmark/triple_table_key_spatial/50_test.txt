@@ -1,0 +1,377 @@
+================================================================================
+[L4_0001] In Texas (STATEFP 48), how many schools are located within FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT s.SCHOOL_ID) AS num_schools FROM schools s JOIN floodplain f ON ST_Contains(f.geometry, ST_Point(s.LON, s.LAT)) JOIN census_tracts t ON ST_Intersects(f.geometry, t.geometry) WHERE t.STATEFP='48' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry);
+
+Success (1 rows, 10.750 sec)
+  9773
+================================================================================
+[L4_0002] Which 5 Florida (STATEFP 12) counties have the highest number of hospitals located inside floodplain zones? Return their names.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON LEFT(h.COUNTYFIPS,5)=c.GEOID JOIN floodplain f ON ST_Contains(f.geometry, ST_Point(h.LON, h.LAT)) WHERE c.STATEFP='12' AND ST_IsValid(f.geometry) AND ST_IsValid(c.geometry) GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 5;
+
+Success (5 rows, 2.425 sec)
+  Miami-Dade  
+  Broward     
+  Orange      
+  Hillsborough
+  Duval       
+================================================================================
+[L4_0003] In Orleans Parish, Louisiana (identified by city name NEW ORLEANS and STATEFP 22 in the schools table), what percentage of schools fall within FEMA floodplain areas?
+--------------------------------------------------------------------------------
+SELECT 100.0 * COUNT(DISTINCT s.SCHOOL_ID) / (SELECT COUNT(*) FROM schools s2 WHERE s2.STATEFP='22' AND s2.CITY='NEW ORLEANS') AS pct_in_floodplain FROM schools s JOIN floodplain f ON ST_Contains(f.geometry, ST_Point(s.LON, s.LAT)) WHERE s.STATEFP='22' AND s.CITY='NEW ORLEANS' AND ST_IsValid(f.geometry);
+
+Success (1 rows, 2.289 sec)
+  93.125
+================================================================================
+[L4_0004] Which 5 Texas (STATEFP 48) counties have the highest average Overall summary percentile rank for all four SVI themes combined among census tracts that intersect FEMA floodplain areas? Return their names.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM county c JOIN census_tracts t ON LEFT(t.GEOID,5)=c.GEOID JOIN svi s ON s.FIPS=t.GEOID JOIN floodplain f ON ST_Intersects(t.geometry,f.geometry) WHERE c.STATEFP='48' AND s.SPL_THEMES IS NOT NULL AND s.SPL_THEMES BETWEEN 0 AND 100 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) GROUP BY c.NAME ORDER BY AVG(s.SPL_THEMES) DESC LIMIT 5;
+
+Success (5 rows, 4.845 sec)
+  Zapata  
+  Willacy 
+  El Paso 
+  Dimmit  
+  Maverick
+================================================================================
+[L4_0005] In Florida (STATEFP 12), what is the ratio of hospitals located inside FEMA floodplain areas to total hospitals?
+--------------------------------------------------------------------------------
+SELECT COUNT(CASE WHEN EXISTS (SELECT 1 FROM floodplain f WHERE ST_Contains(f.geometry, ST_Point(h.LON, h.LAT)) AND ST_IsValid(f.geometry)) THEN 1 END)*1.0/COUNT(*) AS ratio_inside_outside FROM hospitals h WHERE h.STATEFP='12';
+
+Success (1 rows, 2.289 sec)
+  0.8792650918635171
+================================================================================
+[L4_0006] For Louisiana (STATEFP 22), which 5 counties contain the largest number of schools located in floodplain areas?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM schools s JOIN county c ON s.STATEFP=c.STATEFP WHERE c.STATEFP='22' AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Contains(f.geometry, ST_Point(s.LON, s.LAT)) AND ST_IsValid(f.geometry)) GROUP BY c.NAME ORDER BY COUNT(DISTINCT s.SCHOOL_ID) DESC LIMIT 5;
+
+Success (5 rows, 2.641 sec)
+  Iberia     
+  Catahoula  
+  LaSalle    
+  St. Bernard
+  St. Mary   
+================================================================================
+[L4_0007] In Texas (STATEFP 48), how many census tracts with Percentage of individuals with three plus components of social vulnerability higher than 40 intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_high_vuln_tracts FROM cre r JOIN census_tracts t ON r.GEOID=t.GEOID JOIN floodplain f ON ST_Intersects(f.geometry,t.geometry) WHERE LEFT(t.GEOID,2)='48' AND r.PRED3_PE>40 AND r.PRED3_PE BETWEEN 0 AND 100 AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry);
+
+Success (1 rows, 2.592 sec)
+  8089
+================================================================================
+[L4_0008] In Florida (STATEFP 12), how many census tracts with Riverine Flood Risk Score greater than 70 intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_high_risk_tracts FROM nri n JOIN census_tracts t ON n.GEOID=t.GEOID JOIN floodplain f ON ST_Intersects(f.geometry,t.geometry) WHERE LEFT(t.GEOID,2)='12' AND n.RFLD_RISKS>70 AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry);
+
+Success (1 rows, 3.399 sec)
+  340709
+================================================================================
+[L4_0009] In Orleans Parish (in Louisiana, identified by the left most 5 digits of GEOID, 22071), how many local floodplain polygons intersect census tracts that have NFIP claims?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT f.GFID) AS num_intersecting_floodplains FROM floodplain f JOIN census_tracts t ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='22071' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) AND EXISTS (SELECT 1 FROM claims cl WHERE cl.GEOID=t.GEOID);
+
+Success (1 rows, 2.772 sec)
+  5
+================================================================================
+[L4_0010] In Texas (STATEFP 48), which city has the highest number of schools located within FEMA floodplain polygons? Return its city name in uppercase.
+--------------------------------------------------------------------------------
+SELECT s.CITY AS city_name FROM schools s JOIN floodplain f ON ST_Contains(f.geometry, ST_Point(s.LON, s.LAT)) WHERE s.STATEFP='48' AND ST_IsValid(f.geometry) GROUP BY s.CITY ORDER BY COUNT(DISTINCT s.SCHOOL_ID) DESC LIMIT 1;
+
+Success (1 rows, 2.477 sec)
+  HOUSTON
+================================================================================
+[L4_0011] For Florida (STATEFP 12), what percentage of hospitals are located within FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT 100.0 * COUNT(DISTINCT h.HOSPITAL_ID) / (SELECT COUNT(*) FROM hospitals WHERE STATEFP='12') AS pct_in_floodplain FROM hospitals h JOIN floodplain f ON ST_Contains(f.geometry, ST_Point(h.LON, h.LAT)) WHERE h.STATEFP='12' AND ST_IsValid(f.geometry);
+
+Success (1 rows, 2.343 sec)
+  87.92650918635171
+================================================================================
+[L4_0012] In Louisiana (STATEFP 22), which 5 counties have the largest number of schools located in census tracts intersecting FEMA floodplain zones?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM schools s JOIN census_tracts t ON ST_Contains(t.geometry, ST_Point(s.LON, s.LAT)) JOIN county c ON LEFT(t.GEOID,5)=c.GEOID JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE c.STATEFP='22' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) GROUP BY c.NAME ORDER BY COUNT(DISTINCT s.SCHOOL_ID) DESC LIMIT 5;
+
+Success (5 rows, 4.567 sec)
+  East Baton Rouge
+  Orleans         
+  Jefferson       
+  Caddo           
+  St. Tammany     
+================================================================================
+[L4_0013] In Texas (STATEFP 48), how many hospitals are located within census tracts that intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT h.HOSPITAL_ID) AS num_hospitals_in_floodplain_tracts FROM hospitals h JOIN census_tracts t ON ST_Contains(t.geometry, ST_Point(h.LON,h.LAT)) JOIN floodplain f ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,2)='48' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);
+
+Success (1 rows, 2.833 sec)
+  765
+================================================================================
+[L4_0014] Among Florida counties (STATEFP 12), which has the greatest number of low-resilience tracts (percentage of individuals with zero components of social vulnerability lower than 10) that intersect FEMA floodplain areas? Return its county name.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM cre r JOIN census_tracts t ON r.GEOID=t.GEOID JOIN county c ON LEFT(t.GEOID,5)=c.GEOID JOIN floodplain f ON ST_Intersects(t.geometry,f.geometry) WHERE c.STATEFP='12' AND r.PRED0_PE<10 AND r.PRED0_PE BETWEEN 0 AND 100 AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 1;
+
+Success (1 rows, 2.742 sec)
+  Sarasota
+================================================================================
+[L4_0015] In Louisiana (STATEFP 22), what fraction of total hospitals are located inside census tracts that intersect floodplain areas?
+--------------------------------------------------------------------------------
+SELECT COUNT(*)*1.0 / (SELECT COUNT(*) FROM hospitals WHERE STATEFP='22') AS fraction_hospitals_in_floodplain FROM hospitals h WHERE h.STATEFP='22' AND EXISTS (SELECT 1 FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE ST_Contains(t.geometry, ST_Point(h.LON, h.LAT)) AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 6.085 sec)
+  0.9144981412639405
+================================================================================
+[L4_0016] In Texas (STATEFP 48), which county has the highest total Riverine Flooding Expected Annual Loss for Buildings within FEMA floodplain regions? Return its county name.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM nri n JOIN census_tracts t ON n.GEOID=t.GEOID JOIN county c ON LEFT(t.GEOID,5)=c.GEOID JOIN floodplain f ON ST_Intersects(f.geometry, t.geometry) WHERE c.STATEFP='48' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) GROUP BY c.NAME ORDER BY SUM(n.RFLD_EALB) DESC LIMIT 1;
+
+Success (1 rows, 5.051 sec)
+  Brazoria
+================================================================================
+[L4_0017] In Orleans Parish (Louisiana, identified by the left most 5 digits of GEOID, 22071), how many census tracts intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT t.GEOID) AS num_intersecting_tracts FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='22071' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);
+
+Success (1 rows, 2.436 sec)
+  184
+================================================================================
+[L4_0018] In Louisiana (STATEFP 22), which 2 counties have the most schools located inside both FEMA floodplain and ZCTA polygons? Return their county names.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM schools s JOIN county c ON c.STATEFP='22' AND ST_Contains(c.geometry, ST_Point(s.LON, s.LAT)) WHERE EXISTS (SELECT 1 FROM zcta z JOIN floodplain f ON ST_Intersects(f.geometry, z.geometry) WHERE ST_Contains(z.geometry, ST_Point(s.LON, s.LAT)) AND ST_IsValid(f.geometry) AND ST_IsValid(z.geometry)) AND ST_IsValid(c.geometry) GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 2;
+
+Success (2 rows, 8.643 sec)
+  East Baton Rouge
+  Orleans         
+================================================================================
+[L4_0019] In Texas (STATEFP 48), what is the average percentage of individuals with three or more components of social vulnerability among census tracts that intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT AVG(r.PRED3_PE) AS avg_high_vulnerability FROM cre r JOIN census_tracts t ON r.GEOID=t.GEOID JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE t.STATEFP ='48' AND r.PRED3_PE BETWEEN 0 AND 100 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);
+
+Success (1 rows, 4.887 sec)
+  21.75774239276319
+================================================================================
+[L4_0020] Which 5 Florida (STATEFP 12) counties have the largest number of hospitals located within FEMA floodplain regions that overlap census tract boundaries?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON LEFT(h.COUNTYFIPS,5)=c.GEOID JOIN floodplain f ON ST_Contains(f.geometry, ST_Point(h.LON, h.LAT)) JOIN census_tracts t ON ST_Intersects(f.geometry, t.geometry) WHERE c.STATEFP='12' AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry) GROUP BY c.NAME ORDER BY COUNT(DISTINCT h.HOSPITAL_ID) DESC LIMIT 5;
+
+Success (5 rows, 3.530 sec)
+  Miami-Dade  
+  Broward     
+  Orange      
+  Hillsborough
+  Duval       
+================================================================================
+[L4_0021] In Orleans Parish (GEOID 22071), what is the average floodplain area per census tract that contains at least one school?
+--------------------------------------------------------------------------------
+SELECT AVG(flood_area) AS avg_flood_area FROM (SELECT t.GEOID, SUM(ST_Area(ST_Intersection(ST_MakeValid(t.geometry), ST_MakeValid(f.geometry)))) AS flood_area FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='22071' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry) AND EXISTS (SELECT 1 FROM schools s WHERE ST_Contains(t.geometry, ST_Point(s.LON, s.LAT))) GROUP BY t.GEOID);
+
+Success (1 rows, 2.926 sec)
+  0.00013632202859083673
+================================================================================
+[L4_0022] In Louisiana (STATEFP 22), what is the average Riverine Flooding Expected Area Exposure among census tracts that intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT AVG(n.RFLD_EXP_AREA) AS avg_exposed_area FROM nri n JOIN census_tracts t ON n.GEOID=t.GEOID WHERE LEFT(t.GEOID,2)='22' AND n.RFLD_EXP_AREA BETWEEN 0 AND 1e9 AND ST_IsValid(t.geometry) AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(t.geometry, f.geometry) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 4.174 sec)
+  3.058101789520622
+================================================================================
+[L4_0023] In Florida (STATEFP 12), what is the average number of Riverine Flooding events among census tracts that intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT AVG(n.RFLD_EVNTS) AS avg_flood_events FROM nri n JOIN census_tracts t ON n.GEOID=t.GEOID WHERE LEFT(t.GEOID,2)='12' AND n.RFLD_EVNTS BETWEEN 0 AND 1000 AND ST_IsValid(t.geometry) AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(f.geometry,t.geometry) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 5.150 sec)
+  34.15488810365135
+================================================================================
+[L4_0024] In Louisiana (STATEFP 22), which 3 counties contain the largest number of hospitals located within FEMA floodplain polygons? Return their county names.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON LEFT(h.COUNTYFIPS,5)=c.GEOID WHERE c.STATEFP='22' AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Contains(f.geometry, ST_Point(h.LON, h.LAT)) AND ST_IsValid(f.geometry)) GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 3;
+
+Success (3 rows, 2.310 sec)
+  East Baton Rouge
+  Lafayette       
+  St. Tammany     
+================================================================================
+[L4_0025] Which 5 Texas (STATEFP 48) counties have the highest number of schools located within FEMA floodplain polygons? Return their county names.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM schools s JOIN county c ON LEFT(s.STATEFP,2)=c.STATEFP AND ST_Contains(c.geometry, ST_Point(s.LON, s.LAT)) JOIN floodplain f ON ST_Contains(f.geometry, ST_Point(s.LON, s.LAT)) WHERE c.STATEFP='48' AND ST_IsValid(c.geometry) AND ST_IsValid(f.geometry) GROUP BY c.NAME ORDER BY COUNT(DISTINCT s.SCHOOL_ID) DESC LIMIT 5;
+
+Success (5 rows, 18.333 sec)
+  Harris 
+  Dallas 
+  Tarrant
+  Bexar  
+  Travis 
+================================================================================
+[L4_0026] In Harris County, Texas (GEOID 48201), how many schools are located within FEMA floodplain areas that intersect census tracts?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_schools FROM schools s WHERE EXISTS (SELECT 1 FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='48201' AND ST_Contains(t.geometry, ST_Point(s.LON, s.LAT)) AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 2.520 sec)
+  1568
+================================================================================
+[L4_0027] In Florida (STATEFP 12), what is the average population universe of census tracts that intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT AVG(r.POPUNI) AS avg_population_universe FROM cre r JOIN (SELECT DISTINCT t.GEOID FROM census_tracts t JOIN floodplain f ON ST_Intersects(f.geometry,t.geometry) WHERE LEFT(t.GEOID,2)='12' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry)) t2 ON r.GEOID=t2.GEOID;
+
+Success (1 rows, 4.865 sec)
+  4336.608450155763
+================================================================================
+[L4_0028] In Baton Rouge, Louisiana (identified by city name 'BATON ROUGE' and STATEFP 22 in the schools table), what percentage of schools are located within FEMA floodplain areas?
+--------------------------------------------------------------------------------
+SELECT 100.0 * COUNT(*) / (SELECT COUNT(*) FROM schools s2 WHERE s2.STATEFP='22' AND s2.CITY='BATON ROUGE') AS pct_in_floodplain FROM schools s WHERE s.STATEFP='22' AND s.CITY='BATON ROUGE' AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Contains(f.geometry, ST_Point(s.LON, s.LAT)) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 2.301 sec)
+  98.19277108433735
+================================================================================
+[L4_0029] In Travis County, Texas (GEOID 48453), how many hospitals are located in ZCTAs intersecting floodplain areas?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_hospitals FROM hospitals h WHERE LEFT(h.COUNTYFIPS,5)='48453' AND EXISTS (SELECT 1 FROM zcta z JOIN floodplain f ON ST_Intersects(z.geometry, f.geometry) WHERE ST_Contains(z.geometry, ST_Point(h.LON, h.LAT)) AND ST_IsValid(z.geometry) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 5.194 sec)
+  30
+================================================================================
+[L4_0030] In Orleans Parish (Louisiana, GEOID 22071), how many census tracts have NFIP claims and intersect any FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT t.GEOID) AS num_claim_tracts FROM census_tracts t WHERE LEFT(t.GEOID,5)='22071' AND EXISTS (SELECT 1 FROM claims cl WHERE cl.GEOID=t.GEOID) AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(f.geometry, t.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry));
+
+Success (1 rows, 2.428 sec)
+  183
+================================================================================
+[L4_0031] In Miami-Dade County (Florida, GEOID 12086), how many census tracts intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t WHERE LEFT(t.GEOID,5)='12086' AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(f.geometry, t.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry));
+
+Success (1 rows, 2.344 sec)
+  707
+================================================================================
+[L4_0032] In Dallas County, Texas (GEOID 48113), what percentage of hospitals fall within FEMA floodplain areas?
+--------------------------------------------------------------------------------
+SELECT 100.0 * COUNT(*) / (SELECT COUNT(*) FROM hospitals WHERE LEFT(COUNTYFIPS,5)='48113') AS pct_in_flood FROM hospitals h WHERE LEFT(h.COUNTYFIPS,5)='48113' AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Contains(f.geometry, ST_Point(h.LON, h.LAT)) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 2.280 sec)
+  100.0
+================================================================================
+[L4_0033] In Broward County, Florida (GEOID 12011), how many census tracts with Estimated percent of population below 150% poverty line above 25% intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT t.GEOID) AS num_high_poverty_tracts FROM svi s JOIN census_tracts t ON s.FIPS=t.GEOID JOIN floodplain f ON ST_Intersects(t.geometry,f.geometry) WHERE LEFT(t.GEOID,5)='12011' AND s.EP_POV150 BETWEEN 0 AND 100 AND s.EP_POV150>25 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);
+
+Success (1 rows, 2.317 sec)
+  140
+================================================================================
+[L4_0034] In Jefferson Parish, Louisiana (GEOID 22051), how many hospitals lie inside floodplain polygons intersecting census tracts?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_hospitals FROM hospitals h WHERE EXISTS (SELECT 1 FROM census_tracts t JOIN floodplain f ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='22051' AND ST_Contains(t.geometry, ST_Point(h.LON, h.LAT)) AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry));
+
+Success (1 rows, 2.566 sec)
+  17
+================================================================================
+[L4_0035] In Florida (STATEFP 12), what is the total estimated population in census tracts that intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+WITH affected_tracts AS (SELECT DISTINCT t.GEOID FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,2)='12' AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry)) SELECT SUM(s.E_TOTPOP) AS total_population FROM affected_tracts a JOIN svi s ON s.FIPS=a.GEOID WHERE s.E_TOTPOP IS NOT NULL;
+
+Success (1 rows, 4.926 sec)
+  21583194
+================================================================================
+[L4_0036] In Tampa area (Hillsborough County, GEOID 12057), how many census tracts intersect floodplain areas?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t WHERE LEFT(t.GEOID,5)='12057' AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(t.geometry, f.geometry) AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 2.322 sec)
+  335
+================================================================================
+[L4_0037] In Baton Rouge (Louisiana, GEOID 22033), what percentage of hospitals are located completely within FEMA floodplain polygons that intersect census tracts with substantial floodplain area (>0.0001)?
+--------------------------------------------------------------------------------
+SELECT 100.0 * COUNT(DISTINCT h.HOSPITAL_ID) / (SELECT COUNT(*) FROM hospitals WHERE LEFT(COUNTYFIPS,5)='22033') AS pct_in_flood FROM hospitals h WHERE LEFT(h.COUNTYFIPS,5)='22033' AND EXISTS (SELECT 1 FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE ST_Within(ST_Point(h.LON, h.LAT), f.geometry) AND ST_Area(f.geometry) > 0.0001 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 3.132 sec)
+  90.47619047619048
+================================================================================
+[L4_0038] In Dallas County, Texas (GEOID 48113), how many census tracts with NFIP claims intersect floodplain areas?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t WHERE LEFT(t.GEOID,5)='48113' AND EXISTS (SELECT 1 FROM claims cl WHERE cl.GEOID=t.GEOID) AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(t.geometry, f.geometry) AND ST_IsValid(f.geometry) AND ST_IsValid(t.geometry));
+
+Success (1 rows, 2.349 sec)
+  302
+================================================================================
+[L4_0039] In Louisiana (STATEFP 22), what is the average percentage of population with three or more social vulnerability components among tracts that intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT AVG(r.PRED3_PE) AS avg_high_vulnerability_pct FROM cre r JOIN census_tracts t ON r.GEOID=t.GEOID JOIN floodplain f ON ST_Intersects(t.geometry,f.geometry) WHERE LEFT(t.GEOID,2)='22' AND r.PRED3_PE BETWEEN 0 AND 100;
+
+Success (1 rows, 2.085 sec)
+  26.740750498598462
+================================================================================
+[L4_0040] In Louisiana (STATEFP 22), what is the average overall vulnerability percentile (RPL_THEMES) of tracts intersecting FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT AVG(s.RPL_THEMES) AS avg_vulnerability FROM svi s JOIN census_tracts t ON s.FIPS=t.GEOID JOIN floodplain f ON ST_Intersects(t.geometry,f.geometry) WHERE LEFT(t.GEOID,2)='22' AND s.RPL_THEMES BETWEEN 0 AND 100;
+
+Success (1 rows, 2.019 sec)
+  0.5394327147484336
+================================================================================
+[L4_0041] In Orleans Parish (Louisiana, GEOID 22071), how many hospitals fall within FEMA floodplain zones?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_hospitals FROM hospitals h WHERE LEFT(h.COUNTYFIPS,5)='22071' AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Contains(f.geometry, ST_Point(h.LON, h.LAT)) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 2.346 sec)
+  15
+================================================================================
+[L4_0042] In Palm Beach County, Florida (GEOID 12099), how many census tracts intersect FEMA floodplain regions?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t WHERE LEFT(t.GEOID,5)='12099' AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(t.geometry, f.geometry) AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 2.314 sec)
+  354
+================================================================================
+[L4_0043] In Harris County, Texas (GEOID 48201), how many census tracts with limited English proficiency above 10% (EP_LIMENG > 10) intersect FEMA floodplain areas?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT t.GEOID) AS num_limited_english_tracts FROM svi s JOIN census_tracts t ON s.FIPS=t.GEOID JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE LEFT(t.GEOID,5)='48201' AND s.EP_LIMENG BETWEEN 0 AND 100 AND s.EP_LIMENG > 10 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);
+
+Success (1 rows, 2.380 sec)
+  469
+================================================================================
+[L4_0044] In Texas (STATEFP 48), what is the average Riverine Flood Expected Annual Loss for buildings (RFLD_EALB) among census tracts that intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT AVG(sub.RFLD_EALB) AS avg_building_loss FROM (SELECT DISTINCT n.GEOID, n.RFLD_EALB FROM nri n JOIN census_tracts t ON n.GEOID=t.GEOID JOIN floodplain f ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,2)='48' AND n.RFLD_EALB BETWEEN 0 AND 1e9 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry)) AS sub;
+
+Success (1 rows, 4.919 sec)
+  233289.8109664089
+================================================================================
+[L4_0045] In Dallas County (Texas, GEOID 48113), how many hospitals are located within census tracts that intersect FEMA floodplain areas?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_hospitals FROM hospitals h WHERE LEFT(h.COUNTYFIPS,5)='48113' AND EXISTS (SELECT 1 FROM census_tracts t JOIN floodplain f ON ST_Intersects(t.geometry, f.geometry) WHERE ST_Contains(t.geometry, ST_Point(h.LON, h.LAT)) AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 6.341 sec)
+  55
+================================================================================
+[L4_0046] In Harris County, Texas (GEOID 48201), what is the number of census tracts that intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT t.GEOID) AS num_tracts FROM census_tracts t WHERE LEFT(t.GEOID,5)='48201' AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Intersects(t.geometry, f.geometry) AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 2.490 sec)
+  1115
+================================================================================
+[L4_0047] In Miami-Dade County, Florida (GEOID 12086), what percentage of hospitals are located within FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT 100.0 * COUNT(*) / (SELECT COUNT(*) FROM hospitals WHERE LEFT(COUNTYFIPS,5)='12086') AS pct_in_flood FROM hospitals h WHERE LEFT(h.COUNTYFIPS,5)='12086' AND EXISTS (SELECT 1 FROM floodplain f WHERE ST_Contains(f.geometry, ST_Point(h.LON, h.LAT)) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 2.305 sec)
+  94.44444444444444
+================================================================================
+[L4_0048] In Bexar County, Texas (GEOID 48029), how many schools are inside floodplain polygons intersecting census tracts?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_schools FROM schools s WHERE EXISTS (SELECT 1 FROM census_tracts t JOIN floodplain f ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='48029' AND ST_Contains(t.geometry, ST_Point(s.LON, s.LAT)) AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry));
+
+Success (1 rows, 2.485 sec)
+  755
+================================================================================
+[L4_0049] In Harris County, Texas (GEOID 48201), how many census tracts with estimated percent of minority population above 60 intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT t.GEOID) AS num_minority_tracts FROM svi s JOIN census_tracts t ON s.FIPS=t.GEOID JOIN floodplain f ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,5)='48201' AND s.EP_MINRTY BETWEEN 0 AND 100 AND s.EP_MINRTY>60 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry);
+
+Success (1 rows, 2.452 sec)
+  777
+================================================================================
+[L4_0050] In Florida (STATEFP 12), what is the average estimated percent unemployed among census tracts that intersect FEMA floodplain polygons?
+--------------------------------------------------------------------------------
+SELECT AVG(sub.EP_UNEMP) AS avg_unemployment FROM (SELECT DISTINCT s.FIPS, s.EP_UNEMP FROM svi s JOIN census_tracts t ON s.FIPS=t.GEOID JOIN floodplain f ON ST_Intersects(f.geometry, t.geometry) WHERE LEFT(t.GEOID,2)='12' AND s.EP_UNEMP BETWEEN 0 AND 100 AND ST_IsValid(t.geometry) AND ST_IsValid(f.geometry)) AS sub;
+
+Success (1 rows, 4.633 sec)
+  5.154863582443653

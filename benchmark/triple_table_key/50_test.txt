@@ -1,0 +1,432 @@
+================================================================================
+[L3_0001] In Texas (STATEFP 48), what is the average non-null number of observed or modeled riverine flood events weighted by the non-null estimated percent of households with no vehicle among census tracts that have NFIP claims?
+--------------------------------------------------------------------------------
+SELECT SUM(n.RFLD_EVNTS * s.EP_NOVEH) / SUM(s.EP_NOVEH) AS weighted_avg_events FROM (SELECT DISTINCT GEOID, STATEFP FROM claims WHERE STATEFP = '48') cl JOIN nri n ON cl.GEOID = n.GEOID JOIN svi s ON s.GEOID = cl.GEOID WHERE n.RFLD_EVNTS IS NOT NULL AND s.EP_NOVEH IS NOT NULL;
+
+Success (1 rows, 0.089 sec)
+  93.17169105846224
+================================================================================
+[L3_0002] In Florida (STATEFP 12), list the 5 census tracts with the highest population-weighted combined score of NRI total expected annual loss for riverine flooding and its average annual flood event frequency among tracts with NFIP claims.
+--------------------------------------------------------------------------------
+SELECT cl.GEOID FROM (SELECT DISTINCT GEOID, STATEFP FROM claims WHERE STATEFP = '12') cl JOIN nri n ON cl.GEOID = n.GEOID JOIN cre cr ON cr.GEOID = cl.GEOID WHERE n.RFLD_EALT IS NOT NULL AND n.RFLD_AFREQ IS NOT NULL AND cr.POPUNI > 0 GROUP BY cl.GEOID ORDER BY SUM((n.RFLD_EALT + n.RFLD_AFREQ) * cr.POPUNI) / SUM(cr.POPUNI) DESC LIMIT 5;
+
+Success (5 rows, 0.036 sec)
+  48201420900
+  12086011500
+  48167725600
+  22033002801
+  12086019600
+================================================================================
+[L3_0003] In Louisiana (STATEFP 22), how many census tracts with NFIP claims have both above-average total expected annual loss and above-median annual flood frequency for riverine flooding?
+--------------------------------------------------------------------------------
+WITH avg_loss AS (SELECT AVG(CAST(RFLD_EALT AS DOUBLE)) AS avg_ealt FROM nri WHERE GEOID LIKE '22%'), median_freq AS (SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY RFLD_AFREQ) AS med_afreq FROM nri WHERE GEOID LIKE '22%') SELECT COUNT(DISTINCT cl.GEOID) AS num_high_risk_tracts FROM (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '22%') cl JOIN nri n ON cl.GEOID = n.GEOID JOIN cre cr ON cl.GEOID = cr.GEOID, avg_loss, median_freq WHERE n.RFLD_EALT > avg_loss.avg_ealt AND n.RFLD_AFREQ > median_freq.med_afreq;
+
+Success (1 rows, 0.235 sec)
+  137
+================================================================================
+[L3_0004] Which 3 Texas counties (STATEFP 48) have the highest total non-null NFIP building payouts weighted by the non-null historical loss ratio for buildings due to coastal flooding? Return their county names.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM claims cl JOIN nri n ON cl.GEOID = n.GEOID JOIN county c ON LEFT(cl.GEOID, 5) = c.GEOID WHERE c.STATEFP = '48' AND cl.amountPaidOnBuildingClaim IS NOT NULL AND n.CFLD_HLRB IS NOT NULL AND n.CFLD_HLRB BETWEEN 0 AND 1 GROUP BY c.NAME ORDER BY SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE) * CAST(n.CFLD_HLRB AS DOUBLE)) DESC LIMIT 3;
+
+Success (3 rows, 0.038 sec)
+  Cameron
+  Harris 
+  Nueces 
+================================================================================
+[L3_0005] In Harris County, TX (GEOID 48201), among tracts that have NFIP claims, what is the average non-null expected annual coastal flood loss per capita based on SVI total population?
+--------------------------------------------------------------------------------
+SELECT AVG(n.CFLD_EALB / CAST(s.E_TOTPOP AS DOUBLE)) AS avg_loss_per_capita FROM (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '48201%') cl JOIN nri n ON cl.GEOID = n.GEOID JOIN svi s ON s.GEOID = cl.GEOID WHERE n.CFLD_EALB IS NOT NULL AND s.E_TOTPOP > 0;
+
+Success (1 rows, 0.034 sec)
+  7.842180509973438
+================================================================================
+[L3_0006] Which 3 Louisiana counties (STATEFP 22) have the largest number of census tracts that have NFIP claims and above-average expected affected land area due to riverine flooding?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM claims cl JOIN nri n ON cl.GEOID = n.GEOID JOIN county c ON LEFT(cl.GEOID,5)=c.GEOID WHERE c.STATEFP='22' AND n.RFLD_EXP_AREA > (SELECT AVG(RFLD_EXP_AREA) FROM nri WHERE GEOID LIKE '22%') GROUP BY c.NAME ORDER BY COUNT(DISTINCT cl.GEOID) DESC LIMIT 3;
+
+Success (3 rows, 0.019 sec)
+  Vermilion 
+  Iberia    
+  St. Landry
+================================================================================
+[L3_0007] In Florida (STATEFP 12), what is the average ratio between non-null NFIP building claim payouts and non-null coastal flood expected annual building loss, weighted by the non-null estimated percent of households with no vehicle?
+--------------------------------------------------------------------------------
+SELECT SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE) / NULLIF(n.CFLD_EALB, 0) * s.EP_NOVEH) / SUM(s.EP_NOVEH) AS weighted_avg_payout_loss_ratio FROM claims cl JOIN nri n ON cl.GEOID = n.GEOID JOIN svi s ON s.GEOID = cl.GEOID WHERE cl.STATEFP = '12' AND cl.amountPaidOnBuildingClaim IS NOT NULL AND n.CFLD_EALB IS NOT NULL AND s.EP_NOVEH IS NOT NULL;
+
+Success (1 rows, 0.081 sec)
+  17957.01460600447
+================================================================================
+[L3_0008] List the 5 Texas (STATEFP 48) census tracts with the highest ratio of NRI riverine expected annual building loss to total housing units among tracts with NFIP claims.
+--------------------------------------------------------------------------------
+SELECT cl.GEOID FROM (SELECT DISTINCT GEOID, STATEFP FROM claims WHERE STATEFP = '48') cl JOIN nri n ON cl.GEOID = n.GEOID JOIN svi s ON s.GEOID = cl.GEOID WHERE n.RFLD_EALB IS NOT NULL AND s.E_HU > 0 ORDER BY (n.RFLD_EALB / s.E_HU) DESC LIMIT 5;
+
+Success (5 rows, 0.036 sec)
+  48201343601
+  48167724000
+  48201980000
+  48167724500
+  48361020300
+================================================================================
+[L3_0009] List the 5 Louisiana (STATEFP 22) counties ranked by the highest total NFIP payouts per capita using CRE population estimates.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM claims cl JOIN cre cr ON cl.GEOID = cr.GEOID JOIN county c ON LEFT(cl.GEOID,5) = c.GEOID WHERE c.STATEFP = '22' AND cr.POPUNI > 0 AND cl.amountPaidOnBuildingClaim IS NOT NULL GROUP BY c.NAME ORDER BY SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) / SUM(CAST(cr.POPUNI AS DOUBLE)) DESC LIMIT 5;
+
+Success (5 rows, 0.044 sec)
+  Cameron    
+  Plaquemines
+  St. Bernard
+  Orleans    
+  St. Helena 
+================================================================================
+[L3_0010] In Texas (STATEFP 48), what is the average population-weighted riverine flood risk score among tracts that have NFIP claims and CRE data?
+--------------------------------------------------------------------------------
+SELECT SUM(n.RFLD_RISKS * cr.POPUNI) / SUM(cr.POPUNI) AS weighted_risk FROM (SELECT DISTINCT GEOID, STATEFP FROM claims WHERE STATEFP='48') cl JOIN nri n ON cl.GEOID = n.GEOID JOIN cre cr ON cr.GEOID = cl.GEOID WHERE n.RFLD_RISKS IS NOT NULL AND cr.POPUNI > 0;
+
+Success (1 rows, 0.028 sec)
+  69.30237734469767
+================================================================================
+[L3_0011] In Texas (STATEFP 48), what is the population-weighted average coastal flood risk score of census tracts that have NFIP claims and appear in the CRE dataset?
+--------------------------------------------------------------------------------
+SELECT SUM(n.CFLD_RISKS * cr.POPUNI) / SUM(cr.POPUNI) AS weighted_avg_coastal_risk FROM (SELECT DISTINCT GEOID, STATEFP FROM claims WHERE STATEFP='48') cl JOIN nri n ON cl.GEOID = n.GEOID JOIN cre cr ON cr.GEOID = cl.GEOID WHERE n.CFLD_RISKS IS NOT NULL AND cr.POPUNI > 0;
+
+Success (1 rows, 0.018 sec)
+  31.416541741446466
+================================================================================
+[L3_0012] Which 5 Florida (STATEFP 12) counties have the highest average riverine flood risk among tracts that also appear in the SVI and NRI datasets?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM county c JOIN svi s ON LEFT(s.GEOID,5)=c.GEOID JOIN nri n ON s.GEOID = n.GEOID WHERE c.STATEFP='12' AND n.RFLD_RISKS IS NOT NULL GROUP BY c.NAME ORDER BY AVG(n.RFLD_RISKS) DESC LIMIT 5;
+
+Success (5 rows, 0.010 sec)
+  Calhoun   
+  Lafayette 
+  Dixie     
+  Washington
+  Holmes    
+================================================================================
+[L3_0013] How many Louisiana (STATEFP 22) census tracts with NFIP claims have both overall SVI relative vulnerability percentile across all themes above 0.8 and CRE population exceeding 10,000?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT cl.GEOID) AS num_tracts FROM (SELECT DISTINCT GEOID, STATEFP FROM claims WHERE STATEFP='22') cl JOIN svi s ON cl.GEOID = s.GEOID JOIN cre cr ON cl.GEOID = cr.GEOID WHERE s.RPL_THEMES > 0.8 AND cr.POPUNI > 10000;
+
+Success (1 rows, 0.028 sec)
+  1
+================================================================================
+[L3_0014] List the 5 Texas (STATEFP 48) counties with the greatest number of hospitals located in census tracts that also appear in the CRE dataset and have population exceeding 5,000.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON h.COUNTYFIPS = c.GEOID JOIN cre cr ON LEFT(cr.GEOID,5) = c.GEOID WHERE c.STATEFP='48' AND cr.POPUNI > 5000 GROUP BY c.NAME ORDER BY COUNT(DISTINCT h.HOSPITAL_ID) DESC LIMIT 5;
+
+Success (5 rows, 0.010 sec)
+  Harris 
+  Tarrant
+  Bexar  
+  Dallas 
+  Collin 
+================================================================================
+[L3_0015] In Florida (STATEFP 12), what is the average NFIP building payout per claim tract among tracts that also appear in the NRI and SVI datasets?
+--------------------------------------------------------------------------------
+SELECT AVG(avg_payout) AS avg_building_payout FROM (SELECT cl.GEOID, AVG(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) AS avg_payout FROM claims cl JOIN nri n ON cl.GEOID=n.GEOID JOIN svi s ON s.GEOID=cl.GEOID WHERE cl.STATEFP='12' AND cl.amountPaidOnBuildingClaim IS NOT NULL GROUP BY cl.GEOID) t;
+
+Success (1 rows, 0.041 sec)
+  27950.176495490767
+================================================================================
+[L3_0016] Which 5 Louisiana (STATEFP 22) counties have the highest ratio of total NFIP building payouts to CRE population among tracts present in the NRI dataset?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM claims cl JOIN nri n ON cl.GEOID=n.GEOID JOIN cre cr ON cl.GEOID=cr.GEOID JOIN county c ON LEFT(cl.GEOID,5)=c.GEOID WHERE c.STATEFP='22' AND cr.POPUNI>0 AND cl.amountPaidOnBuildingClaim IS NOT NULL GROUP BY c.NAME ORDER BY SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE))/SUM(cr.POPUNI) DESC LIMIT 5;
+
+Success (5 rows, 0.058 sec)
+  Cameron    
+  Plaquemines
+  St. Bernard
+  Orleans    
+  St. Helena 
+================================================================================
+[L3_0017] For Texas (STATEFP 48), what is the average SVI overall vulnerability percentile among tracts that have NFIP claims and NRI records?
+--------------------------------------------------------------------------------
+SELECT AVG(s.RPL_THEMES) AS avg_vulnerability FROM (SELECT DISTINCT GEOID, STATEFP FROM claims WHERE STATEFP='48') cl JOIN nri n ON cl.GEOID=n.GEOID JOIN svi s ON s.GEOID=cl.GEOID WHERE s.RPL_THEMES IS NOT NULL;
+
+Success (1 rows, 0.041 sec)
+  -2.5120805983478447
+================================================================================
+[L3_0018] List the 5 Texas (STATEFP 48) counties with the highest number of hospitals located in census tracts that also appear in the NRI dataset and have above-average riverine flood risk.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON h.COUNTYFIPS = c.GEOID JOIN nri n ON LEFT(n.GEOID,5) = c.GEOID WHERE c.STATEFP='48' AND n.RFLD_RISKS > (SELECT AVG(RFLD_RISKS) FROM nri WHERE GEOID LIKE '48%') GROUP BY c.NAME ORDER BY COUNT(DISTINCT h.HOSPITAL_ID) DESC LIMIT 5;
+
+Success (5 rows, 0.016 sec)
+  Harris 
+  Tarrant
+  Bexar  
+  Dallas 
+  Collin 
+================================================================================
+[L3_0019] In Florida (STATEFP 12), what is the population-weighted average riverine flood risk score among tracts that appear in both CRE and NRI datasets and have NFIP claims?
+--------------------------------------------------------------------------------
+SELECT SUM(n.RFLD_RISKS * cr.POPUNI)/SUM(cr.POPUNI) AS weighted_riverine_risk FROM (SELECT DISTINCT GEOID, STATEFP FROM claims WHERE STATEFP='12') cl JOIN nri n ON cl.GEOID=n.GEOID JOIN cre cr ON cr.GEOID=cl.GEOID WHERE n.RFLD_RISKS IS NOT NULL AND cr.POPUNI>0;
+
+Success (1 rows, 0.019 sec)
+  59.38665118844555
+================================================================================
+[L3_0020] Which 3 Texas counties (STATEFP 48) have the largest number of hospitals located within topologically valid census tracts according to the census_tracts table? Return their county names.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM hospitals h JOIN census_tracts t ON LEFT(t.GEOID, 5) = h.COUNTYFIPS JOIN county c ON c.GEOID = h.COUNTYFIPS WHERE c.STATEFP = '48' AND ST_IsValid(t.geometry) GROUP BY c.NAME ORDER BY COUNT(DISTINCT h.HOSPITAL_ID) DESC LIMIT 3;
+
+Success (3 rows, 0.231 sec)
+  Harris 
+  Tarrant
+  Bexar  
+================================================================================
+[L3_0021] Among Texas (48), Florida (12), and Louisiana (22), which state has the highest average NRI riverine flood risk among tracts with NFIP claims and SVI records?
+--------------------------------------------------------------------------------
+SELECT cl.STATEFP FROM (SELECT DISTINCT GEOID, STATEFP FROM claims) cl JOIN nri n ON cl.GEOID = n.GEOID JOIN svi s ON s.GEOID = cl.GEOID WHERE cl.STATEFP IN ('48','12','22') AND n.RFLD_RISKS IS NOT NULL GROUP BY cl.STATEFP ORDER BY AVG(n.RFLD_RISKS) DESC LIMIT 1;
+
+Success (1 rows, 0.075 sec)
+  22
+================================================================================
+[L3_0022] In Florida (STATEFP 12), what is the average total NFIP building payout per 1,000 residents using CRE population counts for tracts present in the NRI dataset?
+--------------------------------------------------------------------------------
+SELECT (SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) / SUM(cr.POPUNI)) * 1000 AS payout_per_thousand FROM claims cl JOIN nri n ON cl.GEOID = n.GEOID JOIN cre cr ON cl.GEOID = cr.GEOID WHERE cl.STATEFP='12' AND cl.amountPaidOnBuildingClaim IS NOT NULL AND cr.POPUNI>0;
+
+Success (1 rows, 0.035 sec)
+  14076.136444944716
+================================================================================
+[L3_0023] For Texas (STATEFP 48), which 5 counties have the largest difference between average NRI coastal and riverine flood risk among tracts with NFIP claims?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM claims cl JOIN nri n ON cl.GEOID = n.GEOID JOIN county c ON LEFT(cl.GEOID,5)=c.GEOID WHERE c.STATEFP='48' GROUP BY c.NAME ORDER BY (AVG(n.CFLD_RISKS) - AVG(n.RFLD_RISKS)) DESC LIMIT 5;
+
+Success (5 rows, 0.033 sec)
+  Nueces   
+  Calhoun  
+  Aransas  
+  Fort Bend
+  Jackson  
+================================================================================
+[L3_0024] In Louisiana (STATEFP 22), what is the percentage of NFIP claims located in tracts with SVI overall vulnerability above 0.8 and NRI riverine risk above 0.7?
+--------------------------------------------------------------------------------
+SELECT 100.0 * COUNT(*) / (SELECT COUNT(*) FROM claims WHERE STATEFP='22') AS pct_high_risk_claims FROM claims cl JOIN nri n ON cl.GEOID=n.GEOID JOIN svi s ON s.GEOID=cl.GEOID WHERE cl.STATEFP='22' AND s.RPL_THEMES>0.8 AND n.RFLD_RISKS>0.7;
+
+Success (1 rows, 0.022 sec)
+  18.575996970649
+================================================================================
+[L3_0025] List the 5 Florida (STATEFP 12) counties with the lowest average NRI coastal flood expected annual building loss per capita, using CRE population data.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM nri n JOIN cre cr ON n.GEOID=cr.GEOID JOIN county c ON LEFT(n.GEOID,5)=c.GEOID WHERE c.STATEFP='12' AND cr.POPUNI>0 AND n.CFLD_EALB IS NOT NULL GROUP BY c.NAME ORDER BY SUM(n.CFLD_EALB)/SUM(cr.POPUNI) ASC LIMIT 5;
+
+Success (5 rows, 0.007 sec)
+  Union   
+  Alachua 
+  Baker   
+  Holmes  
+  Seminole
+================================================================================
+[L3_0026] For Texas (STATEFP 48), what is the average year of NFIP losses among tracts that appear in both NRI and SVI datasets?
+--------------------------------------------------------------------------------
+SELECT AVG(EXTRACT(YEAR FROM cl.dateOfLoss)) AS avg_loss_year FROM claims cl JOIN nri n ON cl.GEOID=n.GEOID JOIN svi s ON s.GEOID=cl.GEOID WHERE cl.STATEFP='48' AND cl.dateOfLoss IS NOT NULL;
+
+Success (1 rows, 0.096 sec)
+  2005.2360789535696
+================================================================================
+[L3_0027] Which 5 Louisiana (STATEFP 22) counties have the highest average SVI percentile among tracts with above-average NRI riverine flood risk?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM county c JOIN nri n ON LEFT(n.GEOID,5)=c.GEOID JOIN svi s ON s.GEOID=n.GEOID WHERE c.STATEFP='22' AND n.RFLD_RISKS > (SELECT AVG(RFLD_RISKS) FROM nri WHERE GEOID LIKE '22%') GROUP BY c.NAME ORDER BY AVG(s.RPL_THEMES) DESC LIMIT 5;
+
+Success (5 rows, 0.012 sec)
+  Grant     
+  Bienville 
+  St. Helena
+  Madison   
+  Caldwell  
+================================================================================
+[L3_0028] In Florida (STATEFP 12), what is the average ratio of NFIP building payouts to Expected annual loss for buildings due to coastal flooding across tracts with CRE population above 5,000?
+--------------------------------------------------------------------------------
+SELECT AVG(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)/NULLIF(n.CFLD_EALB,0)) AS avg_ratio FROM claims cl JOIN nri n ON cl.GEOID=n.GEOID JOIN cre cr ON cr.GEOID=cl.GEOID WHERE cl.STATEFP='12' AND cl.amountPaidOnBuildingClaim IS NOT NULL AND n.CFLD_EALB>0 AND cr.POPUNI>5000;
+
+Success (1 rows, 0.027 sec)
+  35997.577999996174
+================================================================================
+[L3_0029] Which 5 Texas (STATEFP 48) counties have the highest total number of NFIP claims located in tracts where SVI overall vulnerability exceeds 0.75?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM claims cl JOIN svi s ON cl.GEOID=s.GEOID JOIN county c ON LEFT(cl.GEOID,5)=c.GEOID WHERE c.STATEFP='48' AND s.RPL_THEMES>0.75 GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 5;
+
+Success (5 rows, 0.025 sec)
+  Harris   
+  Galveston
+  Jefferson
+  Brazoria 
+  Cameron  
+================================================================================
+[L3_0030] In Louisiana (STATEFP 22), what is the average overall relative vulnerability percentile across all themes among census tracts that have NFIP claims and appear in the CRE dataset?
+--------------------------------------------------------------------------------
+SELECT AVG(s.RPL_THEMES) AS avg_vulnerability FROM (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '22%') cl JOIN svi s ON cl.GEOID = s.GEOID JOIN cre cr ON cl.GEOID = cr.GEOID WHERE s.RPL_THEMES BETWEEN 0 AND 100;
+
+Success (1 rows, 0.030 sec)
+  0.5791805877803557
+================================================================================
+[L3_0031] Which state among Texas (48), Florida (12), and Louisiana (22) has the lowest population-weighted average SVI vulnerability percentile using CRE population data?
+--------------------------------------------------------------------------------
+SELECT c.STATEFP FROM county c JOIN svi s ON LEFT(s.GEOID,5)=c.GEOID JOIN cre cr ON s.GEOID=cr.GEOID WHERE c.STATEFP IN ('48','12','22') AND s.RPL_THEMES IS NOT NULL AND cr.POPUNI>0 GROUP BY c.STATEFP ORDER BY SUM(s.RPL_THEMES*cr.POPUNI)/SUM(cr.POPUNI) ASC LIMIT 1;
+
+Success (1 rows, 0.010 sec)
+  48
+================================================================================
+[L3_0032] In Florida (STATEFP 12), what percentage of tracts with NFIP claims have both above-median NRI coastal flood risk and below-average SVI vulnerability?
+--------------------------------------------------------------------------------
+WITH stats AS (SELECT AVG(RPL_THEMES) AS avg_svi FROM svi WHERE GEOID LIKE '12%'), med AS (SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY CFLD_RISKS) AS med_risk FROM nri WHERE GEOID LIKE '12%') SELECT 100.0 * COUNT(DISTINCT cl.GEOID) / (SELECT COUNT(DISTINCT GEOID) FROM claims WHERE STATEFP='12') AS pct_qualified FROM (SELECT DISTINCT GEOID, STATEFP FROM claims WHERE STATEFP='12') cl JOIN nri n ON cl.GEOID=n.GEOID JOIN svi s ON s.GEOID=cl.GEOID, stats, med WHERE n.CFLD_RISKS>med.med_risk AND s.RPL_THEMES<stats.avg_svi;
+
+Success (1 rows, 0.035 sec)
+  0.07446016381236038
+================================================================================
+[L3_0033] List the 5 Texas (STATEFP 48) counties with the highest number of NFIP claims per 10,000 residents, based on CRE population counts.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM claims cl JOIN county c ON LEFT(cl.GEOID,5)=c.GEOID JOIN cre cr ON cl.GEOID=cr.GEOID WHERE c.STATEFP='48' AND cr.POPUNI>0 GROUP BY c.NAME ORDER BY (COUNT(*)*10000.0)/SUM(cr.POPUNI) DESC LIMIT 5;
+
+Success (5 rows, 0.033 sec)
+  Kenedy   
+  McMullen 
+  Terrell  
+  Stonewall
+  Dimmit   
+================================================================================
+[L3_0034] In Louisiana (STATEFP 22), what is the correlation between NRI riverine flood risk and SVI vulnerability across tracts with NFIP claims?
+--------------------------------------------------------------------------------
+SELECT CORR(n.RFLD_RISKS, s.RPL_THEMES) AS correlation_value FROM (SELECT DISTINCT GEOID, STATEFP FROM claims WHERE STATEFP='22') cl JOIN nri n ON cl.GEOID=n.GEOID JOIN svi s ON s.GEOID=cl.GEOID WHERE n.RFLD_RISKS IS NOT NULL AND s.RPL_THEMES IS NOT NULL;
+
+Success (1 rows, 0.032 sec)
+  0.09719961889397033
+================================================================================
+[L3_0035] Which 5 Florida (STATEFP 12) counties have the lowest average NFIP building payout per 10,000 residents using CRE population data?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM claims cl JOIN county c ON LEFT(cl.GEOID,5)=c.GEOID JOIN cre cr ON cl.GEOID=cr.GEOID WHERE c.STATEFP='12' AND cl.amountPaidOnBuildingClaim IS NOT NULL AND cr.POPUNI>0 GROUP BY c.NAME ORDER BY SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE))/SUM(cr.POPUNI) ASC LIMIT 5;
+
+Success (5 rows, 0.043 sec)
+  Jefferson 
+  Hendry    
+  Gadsden   
+  Okeechobee
+  Gilchrist 
+================================================================================
+[L3_0036] For Texas (STATEFP 48), what is the proportion of total NFIP payouts occurring in tracts where the NRI riverine flood risk exceeds 0.7?
+--------------------------------------------------------------------------------
+SELECT SUM(CASE WHEN n.RFLD_RISKS>0.7 THEN CAST(cl.amountPaidOnBuildingClaim AS DOUBLE) ELSE 0 END)/SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) AS payout_ratio FROM claims cl JOIN nri n ON cl.GEOID=n.GEOID JOIN svi s ON s.GEOID=cl.GEOID WHERE cl.STATEFP='48' AND cl.amountPaidOnBuildingClaim IS NOT NULL AND n.RFLD_RISKS IS NOT NULL;
+
+Success (1 rows, 0.035 sec)
+  0.9427088852891017
+================================================================================
+[L3_0037] List the 5 Louisiana (STATEFP 22) counties with the largest gap between average NRI riverine risk and coastal risk scores among tracts that appear in the SVI dataset.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM nri n JOIN county c ON LEFT(n.GEOID,5)=c.GEOID JOIN svi s ON s.GEOID=n.GEOID WHERE c.STATEFP='22' GROUP BY c.NAME ORDER BY (AVG(n.RFLD_RISKS)-AVG(n.CFLD_RISKS)) DESC LIMIT 5;
+
+Success (5 rows, 0.024 sec)
+  Concordia     
+  Evangeline    
+  Avoyelles     
+  East Feliciana
+  Pointe Coupee 
+================================================================================
+[L3_0038] In Texas (STATEFP 48), what is the average SVI vulnerability percentile among tracts with NFIP claims and CRE population above the state median?
+--------------------------------------------------------------------------------
+WITH med AS (SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY POPUNI) AS med_pop FROM cre WHERE GEOID LIKE '48%') SELECT AVG(s.RPL_THEMES) AS avg_vulnerability FROM (SELECT DISTINCT GEOID, STATEFP FROM claims WHERE STATEFP='48') cl JOIN svi s ON cl.GEOID=s.GEOID JOIN cre cr ON s.GEOID=cr.GEOID, med WHERE cr.POPUNI>med.med_pop;
+
+Success (1 rows, 0.181 sec)
+  0.18688350730688935
+================================================================================
+[L3_0039] Which 5 Florida (STATEFP 12) counties have the highest total CRE population residing in tracts with NRI coastal flood risk greater than 0.6?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM nri n JOIN cre cr ON n.GEOID=cr.GEOID JOIN county c ON LEFT(n.GEOID,5)=c.GEOID WHERE c.STATEFP='12' AND n.CFLD_RISKS>0.6 GROUP BY c.NAME ORDER BY SUM(cr.POPUNI) DESC LIMIT 5;
+
+Success (5 rows, 0.008 sec)
+  Miami-Dade  
+  Hillsborough
+  Duval       
+  Pinellas    
+  Lee         
+================================================================================
+[L3_0040] For Louisiana (STATEFP 22), what is the mean NFIP claim payout per tract weighted by CRE population across tracts with NRI data?
+--------------------------------------------------------------------------------
+SELECT SUM(sub.avg_payout * sub.POPUNI)/SUM(sub.POPUNI) AS weighted_payout FROM (SELECT cl.GEOID, AVG(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) AS avg_payout, cr.POPUNI FROM claims cl JOIN cre cr ON cl.GEOID=cr.GEOID JOIN nri n ON n.GEOID=cl.GEOID WHERE cl.STATEFP='22' AND cl.amountPaidOnBuildingClaim IS NOT NULL GROUP BY cl.GEOID, cr.POPUNI) sub;
+
+Success (1 rows, 0.038 sec)
+  35903.74982583567
+================================================================================
+[L3_0041] Which 5 Texas (STATEFP 48) counties show the greatest mismatch between high average NFIP building payouts and low NRI riverine flood risk?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM claims cl JOIN nri n ON cl.GEOID = n.GEOID JOIN county c ON LEFT(cl.GEOID,5)=c.GEOID WHERE c.STATEFP='48' AND cl.amountPaidOnBuildingClaim IS NOT NULL AND n.RFLD_RISKS IS NOT NULL GROUP BY c.NAME ORDER BY (AVG(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) - AVG(n.RFLD_RISKS)*10000) DESC LIMIT 5;
+
+Success (5 rows, 0.056 sec)
+  Hansford
+  Nueces  
+  Sabine  
+  Kenedy  
+  Franklin
+================================================================================
+[L3_0042] In Florida (STATEFP 12), what is the ratio of average NFIP building payout to average NRI coastal flood expected annual building loss among tracts with SVI records?
+--------------------------------------------------------------------------------
+SELECT AVG(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) / AVG(n.CFLD_EALB) AS payout_to_loss_ratio FROM claims cl JOIN nri n ON cl.GEOID=n.GEOID JOIN svi s ON s.GEOID=cl.GEOID WHERE cl.STATEFP='12' AND cl.amountPaidOnBuildingClaim IS NOT NULL AND n.CFLD_EALB>0;
+
+Success (1 rows, 0.033 sec)
+  1.7179354170140235
+================================================================================
+[L3_0043] Across all Louisiana (STATEFP 22) counties, which 5 have the highest number of tracts where SVI vulnerability is below 0.5 but NFIP payouts exceed $20,000?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM claims cl JOIN svi s ON cl.GEOID=s.GEOID JOIN county c ON LEFT(cl.GEOID,5)=c.GEOID WHERE c.STATEFP='22' AND s.RPL_THEMES<0.5 AND CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)>20000 GROUP BY c.NAME ORDER BY COUNT(DISTINCT cl.GEOID) DESC LIMIT 5;
+
+Success (5 rows, 0.053 sec)
+  Orleans         
+  Jefferson       
+  East Baton Rouge
+  St. Tammany     
+  Calcasieu       
+================================================================================
+[L3_0044] In Texas (STATEFP 48), what is the average population-normalized NFIP payout per tract using CRE population and NRI data?
+--------------------------------------------------------------------------------
+SELECT AVG((CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)/NULLIF(cr.POPUNI,0))) AS avg_payout_per_capita FROM claims cl JOIN cre cr ON cl.GEOID=cr.GEOID JOIN nri n ON n.GEOID=cl.GEOID WHERE cl.STATEFP='48' AND cl.amountPaidOnBuildingClaim IS NOT NULL AND cr.POPUNI>0;
+
+Success (1 rows, 0.037 sec)
+  15.130699897572063
+================================================================================
+[L3_0045] For Florida (STATEFP 12), list the 5 counties with the highest population-weighted NRI coastal flood risk using CRE data.
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM nri n JOIN cre cr ON n.GEOID=cr.GEOID JOIN county c ON LEFT(n.GEOID,5)=c.GEOID WHERE c.STATEFP='12' AND n.CFLD_RISKS IS NOT NULL AND cr.POPUNI>0 GROUP BY c.NAME ORDER BY SUM(n.CFLD_RISKS*cr.POPUNI)/SUM(cr.POPUNI) DESC LIMIT 5;
+
+Success (5 rows, 0.009 sec)
+  Franklin 
+  Monroe   
+  Gulf     
+  St. Johns
+  Dixie    
+================================================================================
+[L3_0046] In Louisiana (STATEFP 22), what is the correlation between NFIP claim payout and CRE population across tracts with NRI riverine risk data?
+--------------------------------------------------------------------------------
+SELECT CORR(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE), cr.POPUNI) AS payout_pop_corr FROM claims cl JOIN cre cr ON cl.GEOID=cr.GEOID JOIN nri n ON n.GEOID=cl.GEOID WHERE cl.STATEFP='22' AND cl.amountPaidOnBuildingClaim IS NOT NULL AND cr.POPUNI>0;
+
+Success (1 rows, 0.038 sec)
+  0.00811901390909783
+================================================================================
+[L3_0047] Which 5 Texas (STATEFP 48) counties have the highest number of tracts with both high NRI coastal flood risk (>0.8) and high SVI vulnerability (>0.8)?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM nri n JOIN svi s ON n.GEOID=s.GEOID JOIN county c ON LEFT(n.GEOID,5)=c.GEOID WHERE c.STATEFP='48' AND n.CFLD_RISKS>0.8 AND s.RPL_THEMES>0.8 GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 5;
+
+Success (5 rows, 0.022 sec)
+  Harris   
+  Cameron  
+  Galveston
+  Nueces   
+  Brazoria 
+================================================================================
+[L3_0048] For Florida (STATEFP 12), what is the percentage of total CRE population living in tracts where NRI coastal flood expected annual building loss exceeds 10?
+--------------------------------------------------------------------------------
+SELECT 100.0 * SUM(CASE WHEN n.CFLD_EALB>10 THEN cr.POPUNI ELSE 0 END)/SUM(cr.POPUNI) AS pct_exposed_pop FROM nri n JOIN cre cr ON n.GEOID=cr.GEOID JOIN county c ON LEFT(n.GEOID,5)=c.GEOID WHERE c.STATEFP='12' AND cr.POPUNI>0;
+
+Success (1 rows, 0.014 sec)
+  44.06694787655717
+================================================================================
+[L3_0049] Across Louisiana (STATEFP 22), which county has the lowest average NFIP building payout despite above-average NRI flood risk and SVI vulnerability?
+--------------------------------------------------------------------------------
+SELECT c.NAME AS county_name FROM claims cl JOIN nri n ON cl.GEOID=n.GEOID JOIN svi s ON s.GEOID=cl.GEOID JOIN county c ON LEFT(cl.GEOID,5)=c.GEOID WHERE c.STATEFP='22' AND n.RFLD_RISKS>(SELECT AVG(RFLD_RISKS) FROM nri WHERE GEOID LIKE '22%') AND s.RPL_THEMES>(SELECT AVG(RPL_THEMES) FROM svi WHERE GEOID LIKE '22%') AND cl.amountPaidOnBuildingClaim IS NOT NULL GROUP BY c.NAME ORDER BY AVG(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) ASC LIMIT 1;
+
+Success (1 rows, 0.066 sec)
+  Jackson
+================================================================================
+[L3_0050] In Texas (STATEFP 48), what fraction of NFIP claim tracts also appear in both the NRI and SVI datasets?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) * 1.0 / (SELECT COUNT(DISTINCT GEOID) FROM claims WHERE STATEFP='48') AS fraction_shared FROM (SELECT DISTINCT cl.GEOID FROM claims cl JOIN nri n ON cl.GEOID=n.GEOID JOIN svi s ON s.GEOID=cl.GEOID WHERE cl.STATEFP='48');
+
+Success (1 rows, 0.028 sec)
+  0.773976153447382

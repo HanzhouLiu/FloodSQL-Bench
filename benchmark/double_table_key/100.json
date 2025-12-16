@@ -1,0 +1,902 @@
+[
+  {
+    "id": "L1_0001",
+    "question": "Which non-null year had the highest total number of NFIP flood claims in Louisiana (STATEFP 22), based on a key-based join between claims and county tables? Return the year.",
+    "sql": "SELECT STRFTIME('%Y', cl.dateOfLoss) AS year FROM claims cl JOIN county c ON LEFT(cl.GEOID, 5) = c.GEOID WHERE c.STATEFP = '22' AND cl.dateOfLoss IS NOT NULL GROUP BY year ORDER BY COUNT(*) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based (temporal aggregation)",
+    "output_type": "scalar(column='year')",
+    "expected_columns": ["year"]
+  },
+  {
+    "id": "L1_0002",
+    "question": "Return the average non-null Normalized coastal flood risk score among unique Texas tracts (STATEFP 48) that have NFIP claims after 2000-01-01 and non-null NRI risk scores.",
+    "sql": "WITH claim_tracts AS (SELECT DISTINCT GEOID FROM claims WHERE STATEFP = '48' AND dateOfLoss >= DATE '2000-01-01') SELECT AVG(n.CFLD_RISKS) AS avg_coastal_risk FROM claim_tracts t JOIN nri n ON t.GEOID = n.GEOID WHERE n.CFLD_RISKS IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_coastal_risk')",
+    "expected_columns": ["avg_coastal_risk"]
+  },
+  {
+    "id": "L1_0003",
+    "question": "How many non-null ZIP codes in Florida (STATEFP 12) contain both at least one school and one hospital?",
+    "sql": "SELECT COUNT(DISTINCT s.ZIP) AS num_zip_with_both FROM schools s JOIN hospitals h ON s.ZIP = h.ZIP WHERE s.STATEFP = '12' AND h.STATEFP = '12' AND s.ZIP IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_zip_with_both')",
+    "expected_columns": ["num_zip_with_both"]
+  },
+  {
+    "id": "L1_0004",
+    "question": "Which 3 Texas counties (STATEFP 48) have the highest non-null percentage of individuals with zero vulnerability components?",
+    "sql": "SELECT c.NAME AS county_name FROM cre cr JOIN county c ON LEFT(cr.GEOID, 5) = c.GEOID WHERE c.STATEFP = '48' AND cr.PRED0_PE IS NOT NULL GROUP BY c.NAME ORDER BY AVG(cr.PRED0_PE) DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0005",
+    "question": "In East Baton Rouge Parish, LA (GEOID prefix 22033), how many NFIP claims occurred in tracts where at least 20% of the population lacks a high-school diploma (non-null value)?",
+    "sql": "SELECT COUNT(*) AS num_claims FROM claims cl JOIN svi s ON cl.GEOID = s.GEOID WHERE cl.GEOID LIKE '22033%' AND s.EP_NOHSDP IS NOT NULL AND s.EP_NOHSDP >= 20;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_claims')",
+    "expected_columns": ["num_claims"]
+  },
+  {
+    "id": "L1_0006",
+    "question": "Which Louisiana census tract (STATEFP 22) has the highest average non-null expected annual loss for buildings from riverine flooding according to NRI data? Return its 11-digit GEOID.",
+    "sql": "SELECT t.GEOID AS tract_geoid FROM census_tracts t JOIN nri n ON t.GEOID = n.GEOID WHERE t.STATEFP = '22' AND n.RFLD_EALB IS NOT NULL GROUP BY t.GEOID ORDER BY AVG(n.RFLD_EALB) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0007",
+    "question": "List the top 3 riverine flood risk rating categories in Hidalgo County, Texas (GEOID prefix 48215), ranked by total non-null expected annual population loss (USD).",
+    "sql": "SELECT n.RFLD_RISKR FROM nri n JOIN county c ON LEFT(n.GEOID, 5) = c.GEOID WHERE c.GEOID = '48215' AND n.RFLD_EALP IS NOT NULL GROUP BY n.RFLD_RISKR ORDER BY SUM(n.RFLD_EALP) DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='RFLD_RISKR')",
+    "expected_columns": ["RFLD_RISKR"]
+  },
+  {
+    "id": "L1_0008",
+    "question": "Return the 2nd highest Louisiana county (STATEFP 22) ranked by total non-null payout amount (USD) for building structure damage.",
+    "sql": "SELECT c.NAME AS county_name FROM claims cl JOIN county c ON LEFT(cl.GEOID, 5) = c.GEOID WHERE c.STATEFP = '22' AND cl.amountPaidOnBuildingClaim IS NOT NULL GROUP BY c.NAME ORDER BY SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) DESC LIMIT 1 OFFSET 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0009",
+    "question": "Return the average non-null percentage of individuals with zero components of social vulnerability in Florida (STATEFP 12) census tracts that have NFIP claims since 2020-01-01.",
+    "sql": "SELECT AVG(cr.PRED0_PE) AS avg_resilience FROM cre cr JOIN claims cl ON cr.GEOID = cl.GEOID WHERE cl.STATEFP = '12' AND cl.dateOfLoss >= DATE '2020-01-01' AND cr.PRED0_PE IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_resilience')",
+    "expected_columns": ["avg_resilience"]
+  },
+  {
+    "id": "L1_0010",
+    "question": "List the top 2 Florida census tracts (STATEFP 12) with the highest non-null normalized coastal flood risk scores based on NRI data. Return their 11-digit GEOIDs.",
+    "sql": "SELECT t.GEOID AS tract_geoid FROM census_tracts t JOIN nri n ON t.GEOID = n.GEOID WHERE t.STATEFP = '12' AND n.CFLD_RISKS IS NOT NULL ORDER BY n.CFLD_RISKS DESC LIMIT 2;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0011",
+    "question": "In Jefferson Parish, LA (GEOID prefix 22051), how many NFIP claims occurred in tracts where at least 15% of the population is without health insurance?",
+    "sql": "SELECT COUNT(*) AS num_claims FROM claims cl JOIN svi s ON cl.GEOID = s.GEOID WHERE cl.GEOID LIKE '22051%' AND s.EP_UNINSUR >= 15;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_claims')",
+    "expected_columns": ["num_claims"]
+  },
+  {
+    "id": "L1_0012",
+    "question": "Which ZIP code in Texas (STATEFP 48) contains the largest number of schools and hospitals combined? Return the 5-digit ZIP code.",
+    "sql": "SELECT s.ZIP AS zip_code FROM schools s JOIN hospitals h ON s.ZIP = h.ZIP WHERE s.STATEFP = '48' AND h.STATEFP = '48' GROUP BY s.ZIP ORDER BY (COUNT(DISTINCT s.SCHOOL_ID) + COUNT(DISTINCT h.HOSPITAL_ID)) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='zip_code')",
+    "expected_columns": ["zip_code"]
+  },
+  {
+    "id": "L1_0013",
+    "question": "Return the Louisiana county (STATEFP 22) with the highest number of 'CRITICAL ACCESS' hospitals.",
+    "sql": "SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON h.COUNTYFIPS = c.GEOID WHERE h.STATEFP = '22' AND h.TYPE = 'CRITICAL ACCESS' GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0014",
+    "question": "In Florida (STATEFP 12), what is the average non-null expected exposure value of buildings to coastal flooding among tracts that have NFIP claims?",
+    "sql": "SELECT AVG(n.CFLD_EXPB) AS avg_building_exposure FROM claims cl JOIN nri n ON cl.GEOID = n.GEOID WHERE cl.STATEFP = '12' AND n.CFLD_EXPB IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_building_exposure')",
+    "expected_columns": ["avg_building_exposure"]
+  },
+  {
+    "id": "L1_0015",
+    "question": "List the top 4 most common coastal flood risk rating categories in St. Bernard Parish, LA (GEOID prefix 22087), ranked by the number of NFIP claims.",
+    "sql": "SELECT n.CFLD_RISKR FROM claims cl JOIN nri n ON cl.GEOID = n.GEOID WHERE cl.GEOID LIKE '22087%' GROUP BY n.CFLD_RISKR ORDER BY COUNT(*) DESC LIMIT 4;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='CFLD_RISKR')",
+    "expected_columns": ["CFLD_RISKR"]
+  },
+  {
+    "id": "L1_0016",
+    "question": "What is the average of county-level ratios of water-only census tracts across Florida (STATEFP 12)?",
+    "sql": "SELECT AVG(water_ratio) AS avg_water_tract_ratio FROM (SELECT c.NAME, AVG(CASE WHEN cr.WATER_TRACT = 1 THEN 1 ELSE 0 END) AS water_ratio FROM cre cr JOIN county c ON LEFT(cr.GEOID, 5) = c.GEOID WHERE c.STATEFP = '12' GROUP BY c.NAME);",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_water_tract_ratio')",
+    "expected_columns": ["avg_water_tract_ratio"]
+  },
+  {
+    "id": "L1_0017",
+    "question": "Which 3 Louisiana counties (STATEFP 22) have the highest total non-null NFIP claim payouts for buildings? Return their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM claims cl JOIN county c ON LEFT(cl.GEOID, 5) = c.GEOID WHERE c.STATEFP = '22' AND cl.amountPaidOnBuildingClaim IS NOT NULL GROUP BY c.NAME ORDER BY SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0018",
+    "question": "In Texas (STATEFP 48), which ZIP code area has the highest combined number of schools and hospitals? Return the ZIP code.",
+    "sql": "SELECT s.ZIP AS zip_code FROM schools s JOIN hospitals h ON s.ZIP = h.ZIP WHERE s.STATEFP = '48' AND h.STATEFP = '48' GROUP BY s.ZIP ORDER BY (COUNT(DISTINCT s.SCHOOL_ID) + COUNT(DISTINCT h.HOSPITAL_ID)) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='zip_code')",
+    "expected_columns": ["zip_code"]
+  },
+  {
+    "id": "L1_0019",
+    "question": "In Florida (STATEFP 12), how many hospitals are located in ZIP codes starting with '33'?",
+    "sql": "SELECT COUNT(DISTINCT h.HOSPITAL_ID) AS num_hospitals FROM hospitals h JOIN county c ON LEFT(h.COUNTYFIPS, 5) = c.GEOID WHERE c.STATEFP = '12' AND h.ZIP LIKE '33%';",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_hospitals')",
+    "expected_columns": ["num_hospitals"]
+  },
+  {
+    "id": "L1_0020",
+    "question": "Which 3 Louisiana counties (STATEFP 22) contain the highest number of hospitals? Return their names.",
+    "sql": "SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON LEFT(h.COUNTYFIPS, 5) = c.GEOID WHERE c.STATEFP = '22' GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0021",
+    "question": "Which Louisiana county (STATEFP 22) contains the largest number of census tracts? Return its county name.",
+    "sql": "SELECT c.NAME AS county_name FROM county c JOIN census_tracts t ON LEFT(t.GEOID, 5) = c.GEOID WHERE c.STATEFP = '22' GROUP BY c.NAME ORDER BY COUNT(DISTINCT t.GEOID) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0022",
+    "question": "Which Louisiana county (STATEFP 22) has the largest resilience gap, difference between non-null percentage of individuals with zero components of social vulnerability and non-null percentage of individuals with three plus components of social vulnerability? Return its county name.",
+    "sql": "SELECT c.NAME AS county_name FROM cre cr JOIN county c ON LEFT(cr.GEOID, 5) = c.GEOID WHERE c.STATEFP = '22' AND cr.PRED0_PE IS NOT NULL AND cr.PRED3_PE IS NOT NULL GROUP BY c.NAME ORDER BY AVG(cr.PRED0_PE - cr.PRED3_PE) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0023",
+    "question": "Which Louisiana county (STATEFP 22) had the largest number of NFIP flood claims in 2003? Return the county name.",
+    "sql": "SELECT c.NAME AS county_name FROM claims cl JOIN county c ON LEFT(cl.GEOID, 5) = c.GEOID WHERE c.STATEFP = '22' AND cl.dateOfLoss >= DATE '2003-01-01' AND cl.dateOfLoss < DATE '2004-01-01' GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based (temporal aggregation)",
+    "output_type": "scalar(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0024",
+    "question": "Which 3 Texas counties (STATEFP 48) have the largest number of hospitals? Return their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON LEFT(h.COUNTYFIPS, 5) = c.GEOID WHERE c.STATEFP = '48' GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0025",
+    "question": "Return the Louisiana county name (STATEFP 22) with the highest average non-null percentage of individuals with one to two components of social vulnerability.",
+    "sql": "SELECT c.NAME AS county_name FROM cre cr JOIN county c ON LEFT(cr.GEOID, 5) = c.GEOID WHERE c.STATEFP = '22' AND cr.PRED12_PE IS NOT NULL GROUP BY c.NAME ORDER BY AVG(cr.PRED12_PE) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0026",
+    "question": "In Texas (STATEFP 48), which ZIP code area has the highest proportion of COLLEGE-type schools relative to total schools and hospitals combined? Return the ZIP code.",
+    "sql": "SELECT s.ZIP AS zip_code FROM schools s JOIN hospitals h ON s.ZIP = h.ZIP WHERE s.STATEFP = '48' AND h.STATEFP = '48' GROUP BY s.ZIP HAVING COUNT(DISTINCT s.SCHOOL_ID) > 0 ORDER BY (SUM(CASE WHEN s.TYPE = 'COLLEGE' THEN 1 ELSE 0 END) * 1.0 / (COUNT(DISTINCT s.SCHOOL_ID) + COUNT(DISTINCT h.HOSPITAL_ID))) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='zip_code')",
+    "expected_columns": ["zip_code"]
+  },
+  {
+    "id": "L1_0027",
+    "question": "Which Louisiana county (STATEFP 22) has the highest average unemployment? Return its county name.",
+    "sql": "SELECT c.NAME AS county_name FROM svi s JOIN county c ON LEFT(s.GEOID, 5) = c.GEOID WHERE c.STATEFP = '22' AND s.E_UNEMP IS NOT NULL GROUP BY c.NAME ORDER BY AVG(s.E_UNEMP) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0028",
+    "question": "Which 3 Florida counties (STATEFP 12) have the highest average non-null riverine flood risk score?",
+    "sql": "SELECT c.NAME AS county_name FROM nri n JOIN county c ON LEFT(n.GEOID, 5) = c.GEOID WHERE c.STATEFP = '12' AND n.RFLD_RISKS IS NOT NULL GROUP BY c.NAME ORDER BY AVG(n.RFLD_RISKS) DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0029",
+    "question": "Which 5 Texas counties (STATEFP 48) have the highest average non-null estimated population below 150% of the poverty line?",
+    "sql": "SELECT c.NAME AS county_name FROM svi s JOIN county c ON LEFT(s.GEOID, 5) = c.GEOID WHERE c.STATEFP = '48' AND s.E_POV150 IS NOT NULL GROUP BY c.NAME ORDER BY AVG(s.E_POV150) DESC LIMIT 5;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0030",
+    "question": "Which Florida county (STATEFP 12) has the highest average non-null building exposure to coastal flooding?",
+    "sql": "SELECT c.NAME AS county_name FROM nri n JOIN county c ON LEFT(n.GEOID, 5) = c.GEOID WHERE c.STATEFP = '12' AND n.CFLD_EXPB IS NOT NULL GROUP BY c.NAME ORDER BY AVG(n.CFLD_EXPB) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0031",
+    "question": "Average coastal flood risk score among tracts with claims in Texas (identified by STATEFP 48) after 2010-01-01.",
+    "sql": "SELECT AVG(n.CFLD_RISKS) AS avg_coastal_risk FROM nri n JOIN (SELECT DISTINCT GEOID FROM claims WHERE STATEFP = '48' AND dateOfLoss >= DATE '2010-01-01') cl ON n.GEOID = cl.GEOID WHERE n.CFLD_RISKS IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_coastal_risk')",
+    "expected_columns": ["avg_coastal_risk"]
+  },
+  {
+    "id": "L1_0032",
+    "question": "Top 2 Florida census tracts (identified by STATEFP 12) with the highest non-null estimated number of households with high housing cost burden. List their 11-digit GEOIDs.",
+    "sql": "SELECT t.GEOID AS tract_geoid FROM census_tracts t JOIN svi s ON t.GEOID = s.GEOID WHERE t.STATEFP = '12' AND s.E_HBURD IS NOT NULL ORDER BY s.E_HBURD DESC LIMIT 2;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0033",
+    "question": "Average percentage of individuals with zero components of social vulnerability in Louisiana tracts (identified by STATEFP 22) with claims since 2017-01-01.",
+    "sql": "WITH claim_tracts AS (SELECT DISTINCT GEOID FROM claims WHERE STATEFP = '22' AND dateOfLoss >= DATE '2017-01-01') SELECT AVG(cr.PRED0_PE) AS avg_resilience FROM cre cr JOIN claim_tracts t ON cr.GEOID = t.GEOID;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_resilience')",
+    "expected_columns": ["avg_resilience"]
+  },
+  {
+    "id": "L1_0034",
+    "question": "How many Louisiana census tracts (identified by GEOID starting with 22) with NFIP claims have an estimated number of households with high housing cost burden greater than 1000?",
+    "sql": "SELECT COUNT(*) AS num_high_housing_burden FROM svi s JOIN (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '22%') cl ON s.GEOID = cl.GEOID WHERE s.E_HBURD > 1000;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_high_housing_burden')",
+    "expected_columns": ["num_high_housing_burden"]
+  },
+  {
+    "id": "L1_0035",
+    "question": "Average non-null coastal flood expected annual population loss among tracts with claims in Florida (identified by STATEFP 12) after 2005-01-01.",
+    "sql": "SELECT AVG(CAST(n.CFLD_EALP AS DOUBLE)) AS avg_eal_population FROM nri n JOIN (SELECT DISTINCT GEOID FROM claims WHERE STATEFP='12' AND dateOfLoss >= DATE '2005-01-01') cl ON n.GEOID = cl.GEOID WHERE n.CFLD_EALP IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_eal_population')",
+    "expected_columns": ["avg_eal_population"]
+  },
+  {
+    "id": "L1_0036",
+    "question": "Top 3 Florida counties (identified by STATEFP 12) with the highest non-null payout amount for building structure damage. List their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM claims cl JOIN county c ON LEFT(cl.GEOID, 5) = c.GEOID WHERE c.STATEFP = '12' AND cl.amountPaidOnBuildingClaim IS NOT NULL GROUP BY c.NAME ORDER BY SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0037",
+    "question": "Which Texas county (identified by STATEFP = '48') has the highest average difference between non-null percentage of individuals with one-two components of social vulnerability and non-null percentage of individuals with zero components of social vulnerability among its tracts, based on CRE records? Return its county name.",
+    "sql": "SELECT c.NAME AS county_name FROM cre r JOIN county c ON LEFT(r.GEOID,5)=c.GEOID WHERE c.STATEFP='48' AND r.PRED12_PE IS NOT NULL AND r.PRED0_PE IS NOT NULL GROUP BY c.NAME ORDER BY AVG(r.PRED12_PE - r.PRED0_PE) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0038",
+    "question": "Between Texas (STATEFP = '48') and Louisiana (STATEFP = '22'), which state shows a higher average production of non-null estimated percent without health insurance and coastal flood risk score? Return its 2-digit STATEFP code.",
+    "sql": "SELECT LEFT(s.GEOID, 2) AS STATEFP FROM svi s JOIN nri n ON s.GEOID = n.GEOID WHERE LEFT(s.GEOID, 2) IN ('48','22') AND s.EP_UNINSUR IS NOT NULL AND n.CFLD_RISKS IS NOT NULL GROUP BY LEFT(s.GEOID, 2) ORDER BY AVG(s.EP_UNINSUR * n.CFLD_RISKS) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='STATEFP')",
+    "expected_columns": ["STATEFP"]
+  },
+  {
+    "id": "L1_0039",
+    "question": "Average non-null percentage of population aged 65 and older in Lee, FL (identified by GEOID starting with 12071) tracts with claims.",
+    "sql": "SELECT AVG(s.EP_AGE65) AS avg_elderly_pct FROM svi s JOIN (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '12071%') cl ON s.GEOID = cl.GEOID WHERE s.EP_AGE65 IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_elderly_pct')",
+    "expected_columns": ["avg_elderly_pct"]
+  },
+  {
+    "id": "L1_0040",
+    "question": "Average non-null percentage of population aged 65 and older in Florida tracts (identified by STATEFP 12) with NFIP claims since 2022-01-01.",
+    "sql": "WITH claim_tracts AS (SELECT DISTINCT GEOID FROM claims WHERE STATEFP = '12' AND dateOfLoss >= DATE '2022-01-01') SELECT AVG(s.EP_AGE65) AS avg_elderly_pct FROM svi s JOIN claim_tracts t ON s.GEOID = t.GEOID WHERE s.EP_AGE65 IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_elderly_pct')",
+    "expected_columns": ["avg_elderly_pct"]
+  },
+  {
+    "id": "L1_0041",
+    "question": "Lowest riverine flood risk rating category in Dallas County, TX (identified by GEOID starting with 48113), ranked by total NFIP claims.",
+    "sql": "SELECT n.RFLD_RISKR FROM claims cl JOIN nri n ON cl.GEOID = n.GEOID WHERE cl.GEOID LIKE '48113%' GROUP BY n.RFLD_RISKR ORDER BY COUNT(*) ASC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='RFLD_RISKR')",
+    "expected_columns": ["RFLD_RISKR"]
+  },
+  {
+    "id": "L1_0042",
+    "question": "In Hidalgo, TX (identified by GEOID starting with 48215), how many NFIP claims occurred in tracts with NRI riverine risk rating 'Very High'?",
+    "sql": "SELECT COUNT(*) AS num_claims FROM claims cl JOIN nri n ON cl.GEOID = n.GEOID WHERE cl.GEOID LIKE '48215%' AND n.RFLD_RISKR = 'Very High';",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_claims')",
+    "expected_columns": ["num_claims"]
+  },
+  {
+    "id": "L1_0043",
+    "question": "Average non-null percentage of population without health insurance in Florida (identified by GEOID starting with 12) tracts with claims since 2005-01-01.",
+    "sql": "SELECT AVG(s.EP_UNINSUR) AS avg_uninsured_pct FROM svi s JOIN (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '12%' AND dateOfLoss >= DATE '2005-01-01') cl ON s.GEOID = cl.GEOID WHERE s.EP_UNINSUR IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_uninsured_pct')",
+    "expected_columns": ["avg_uninsured_pct"]
+  },
+  {
+    "id": "L1_0044",
+    "question": "Average non-null estimated number of single-parent households among Louisiana tracts (identified by STATEFP 22) with NFIP claims since 2005-01-01.",
+    "sql": "WITH claim_tracts AS (SELECT DISTINCT GEOID FROM claims WHERE STATEFP='22' AND dateOfLoss >= DATE '2005-01-01') SELECT AVG(s.E_SNGPNT) AS avg_single_parent FROM svi s JOIN claim_tracts t ON s.GEOID=t.GEOID WHERE s.E_SNGPNT IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_single_parent')",
+    "expected_columns": ["avg_single_parent"]
+  },
+  {
+    "id": "L1_0045",
+    "question": "Top 3 Texas census tracts (identified by STATEFP 48) with the highest non-null NRI riverine expected annual building loss. List their 11-digit GEOIDs.",
+    "sql": "SELECT t.GEOID AS tract_geoid FROM census_tracts t JOIN nri n ON t.GEOID = n.GEOID WHERE t.STATEFP = '48' AND n.RFLD_EALB IS NOT NULL ORDER BY CAST(n.RFLD_EALB AS DOUBLE) DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0046",
+    "question": "Which Texas county (STATEFP 48) whose entire area lies west of longitude -97 has the highest total non-null payout amount for building structure damage? Return its county name.",
+    "sql": "SELECT c.NAME AS county_name FROM claims cl JOIN county c ON LEFT(cl.GEOID, 5) = c.GEOID WHERE c.STATEFP = '48' AND cl.amountPaidOnBuildingClaim IS NOT NULL AND ST_XMax(c.geometry) < -97 GROUP BY c.NAME ORDER BY SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0047",
+    "question": "Top 3 Louisiana counties (identified by STATEFP 22) with the highest number of hospitals whose names include 'Medical Center'. Return the county names.",
+    "sql": "SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON h.COUNTYFIPS = c.GEOID WHERE h.STATEFP = '22' AND h.NAME ILIKE '%Medical Center%' GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0048",
+    "question": "In Travis, TX (identified by GEOID starting with 48453), how many NFIP claims occurred in tracts where at least 10% of the population has limited English proficiency?",
+    "sql": "SELECT COUNT(*) AS num_claims FROM claims cl JOIN svi s ON cl.GEOID = s.GEOID WHERE cl.GEOID LIKE '48453%' AND s.EP_LIMENG >= 10;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_claims')",
+    "expected_columns": ["num_claims"]
+  },
+  {
+    "id": "L1_0049",
+    "question": "Top 3 Texas census tracts (identified by STATEFP 48) with the highest positive NRI coastal flood risk scores. List their 11-digit GEOIDs.",
+    "sql": "SELECT t.GEOID AS tract_geoid FROM census_tracts t JOIN nri n ON t.GEOID = n.GEOID WHERE t.STATEFP = '48' AND n.CFLD_RISKS > 0 ORDER BY n.CFLD_RISKS DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0050",
+    "question": "Top 2 most common NRI riverine risk rating categories in Duval County, Florida (identified by GEOID starting with 12031), ranked by number of NFIP claims.",
+    "sql": "SELECT n.RFLD_RISKR FROM claims cl JOIN nri n ON cl.GEOID = n.GEOID WHERE cl.GEOID LIKE '12031%' GROUP BY n.RFLD_RISKR ORDER BY COUNT(*) DESC LIMIT 2;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='RFLD_RISKR')",
+    "expected_columns": ["RFLD_RISKR"]
+  },
+  {
+    "id": "L1_0051",
+    "question": "Average non-null NRI coastal flood expected annual building loss among tracts with claims in Texas (identified by STATEFP 48) after 2010-01-01.",
+    "sql": "SELECT AVG(CAST(n.CFLD_EALB AS DOUBLE)) AS avg_eal_building FROM nri n JOIN (SELECT DISTINCT GEOID FROM claims WHERE STATEFP = '48' AND dateOfLoss >= DATE '2010-01-01') cl ON n.GEOID = cl.GEOID WHERE n.CFLD_EALB IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_eal_building')",
+    "expected_columns": ["avg_eal_building"]
+  },
+  {
+    "id": "L1_0052",
+    "question": "The 5th highest Texas census tract (identified by STATEFP 48) by non-null estimated percentage of households with no vehicle available. List their 11-digit GEOIDs.",
+    "sql": "SELECT t.GEOID AS tract_geoid FROM census_tracts t JOIN svi s ON t.GEOID = s.GEOID WHERE t.STATEFP = '48' AND s.EP_NOVEH IS NOT NULL ORDER BY s.EP_NOVEH DESC LIMIT 1 OFFSET 4;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0053",
+    "question": "Top 5 Texas counties (identified by STATEFP 48) with the largest number of hospitals. List their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON h.COUNTYFIPS = c.GEOID WHERE h.STATEFP = '48' GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 5;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0054",
+    "question": "Top 5 Louisiana census tracts (identified by STATEFP 22) with the highest average non-null coastal flood risk scores. List their 11-digit GEOIDs.",
+    "sql": "SELECT n.GEOID FROM nri n JOIN census_tracts t ON n.GEOID = t.GEOID WHERE t.STATEFP = '22' AND n.CFLD_RISKS IS NOT NULL GROUP BY n.GEOID ORDER BY AVG(n.CFLD_RISKS) DESC LIMIT 5;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='GEOID')",
+    "expected_columns": ["GEOID"]
+  },
+  {
+    "id": "L1_0055",
+    "question": "Top 3 Louisiana counties (identified by STATEFP 22) with the highest Payout amount for building structure damage. List their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM claims cl JOIN county c ON LEFT(cl.GEOID, 5) = c.GEOID WHERE c.STATEFP = '22' GROUP BY c.NAME ORDER BY SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0056",
+    "question": "Top 3 Texas counties (identified by STATEFP 48) with the highest number of 'GENERAL ACUTE CARE' hospitals. Return their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON h.COUNTYFIPS = c.GEOID WHERE h.STATEFP = '48' AND h.TYPE = 'GENERAL ACUTE CARE' GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0057",
+    "question": "Top 5 Louisiana census tracts (identified by STATEFP 22) with the highest non-null percentage of population without a high school diploma. List their 11-digit GEOIDs.",
+    "sql": "SELECT t.GEOID AS tract_geoid FROM census_tracts t JOIN svi s ON t.GEOID = s.GEOID WHERE t.STATEFP = '22' AND s.EP_NOHSDP IS NOT NULL ORDER BY s.EP_NOHSDP DESC LIMIT 5;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0058",
+    "question": "Average non-null percentage of individuals with one to two components of social vulnerability in Texas tracts (identified by STATEFP 48) with claims since 2015-01-01.",
+    "sql": "WITH claim_tracts AS (SELECT DISTINCT GEOID FROM claims WHERE STATEFP='48' AND dateOfLoss >= DATE '2015-01-01') SELECT AVG(cr.PRED12_PE) AS avg_mid_resilience FROM cre cr JOIN claim_tracts t ON cr.GEOID=t.GEOID WHERE cr.PRED12_PE IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_mid_resilience')",
+    "expected_columns": ["avg_mid_resilience"]
+  },
+  {
+    "id": "L1_0059",
+    "question": "In Cameron, TX (identified by GEOID starting with 48061), how many NFIP claims occurred in tracts with riverine flood risk rating 'Very Low'?",
+    "sql": "SELECT COUNT(*) AS num_claims FROM claims cl JOIN nri n ON cl.GEOID = n.GEOID WHERE cl.GEOID LIKE '48061%' AND n.RFLD_RISKR = 'Very Low';",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_claims')",
+    "expected_columns": ["num_claims"]
+  },
+  {
+    "id": "L1_0060",
+    "question": "The 4th highest Texas census tract (identified by STATEFP 48) by non-null percentage of population with disabilities. List their 11-digit GEOIDs.",
+    "sql": "SELECT t.GEOID AS tract_geoid FROM census_tracts t JOIN svi s ON t.GEOID = s.GEOID WHERE t.STATEFP = '48' AND s.EP_DISABL IS NOT NULL ORDER BY s.EP_DISABL DESC LIMIT 1 OFFSET 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0061",
+    "question": "Which tract in Hidalgo, TX (identified by GEOID starting with 48215) with NFIP claims has the highest non-null margin of error for estimated disabled population? Return its 11-digit GEOID.",
+    "sql": "SELECT s.GEOID AS tract_geoid FROM svi s JOIN (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '48215%') cl ON s.GEOID = cl.GEOID WHERE s.M_DISABL IS NOT NULL ORDER BY s.M_DISABL DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0062",
+    "question": "How many Louisiana counties (identified by STATEFP 22) have at least one hospital record?",
+    "sql": "SELECT COUNT(DISTINCT c.GEOID) AS num_counties_with_hospitals FROM hospitals h JOIN county c ON h.COUNTYFIPS = c.GEOID WHERE h.STATEFP = '22';",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_counties_with_hospitals')",
+    "expected_columns": ["num_counties_with_hospitals"]
+  },
+  {
+    "id": "L1_0063",
+    "question": "Average share of water-only tracts among Florida tracts (STATEFP 12) that have at least one NFIP claim since 2022-01-01.",
+    "sql": "WITH claim_tracts AS (SELECT DISTINCT GEOID FROM claims WHERE STATEFP='12' AND dateOfLoss >= DATE '2022-01-01') SELECT AVG(CASE WHEN cr.WATER_TRACT = 1 THEN 1 ELSE 0 END) AS avg_water_fraction FROM cre cr JOIN claim_tracts t ON cr.GEOID = t.GEOID;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_water_fraction')",
+    "expected_columns": ["avg_water_fraction"]
+  },
+  {
+    "id": "L1_0064",
+    "question": "Top 5 Texas counties (STATEFP 48) with the highest average share of water-only tracts according to CRE data. List their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM cre cr JOIN county c ON LEFT(cr.GEOID, 5) = c.GEOID WHERE c.STATEFP = '48' GROUP BY c.NAME ORDER BY AVG(CASE WHEN cr.WATER_TRACT = 1 THEN 1 ELSE 0 END) DESC LIMIT 5;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0065",
+    "question": "How many Louisiana tracts (identified by GEOID starting with 22) with NFIP claims since 2015-01-01 have an estimated population with no Internet access greater than 300?",
+    "sql": "SELECT COUNT(*) AS num_low_internet FROM svi s JOIN (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '22%' AND dateOfLoss >= DATE '2015-01-01') cl ON s.GEOID = cl.GEOID WHERE s.E_NOINT > 300;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_low_internet')",
+    "expected_columns": ["num_low_internet"]
+  },
+  {
+    "id": "L1_0066",
+    "question": "In Texas (identified by GEOID starting with 48), average estimated population below 150% poverty line among tracts with claims since 2000-01-01.",
+    "sql": "SELECT AVG(s.E_POV150) AS avg_poverty FROM svi s JOIN (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '48%' AND dateOfLoss >= DATE '2000-01-01') cl ON s.GEOID = cl.GEOID;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_poverty')",
+    "expected_columns": ["avg_poverty"]
+  },
+  {
+    "id": "L1_0067",
+    "question": "Top 3 Texas counties (identified by STATEFP 48) with the highest Payout amount for building structure damage. List their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM claims cl JOIN county c ON LEFT(cl.GEOID, 5) = c.GEOID WHERE c.STATEFP = '48' GROUP BY c.NAME ORDER BY SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0068",
+    "question": "Average non-null population universe used in tract-level resilience estimation among Texas tracts (identified by STATEFP 48) with NFIP claims since 2022-01-01.",
+    "sql": "WITH claim_tracts AS (SELECT DISTINCT GEOID FROM claims WHERE STATEFP='48' AND dateOfLoss >= DATE '2022-01-01') SELECT AVG(cr.POPUNI) AS avg_model_population FROM cre cr JOIN claim_tracts t ON cr.GEOID=t.GEOID WHERE cr.POPUNI IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_model_population')",
+    "expected_columns": ["avg_model_population"]
+  },
+  {
+    "id": "L1_0069",
+    "question": "Top 5 Louisiana tracts (identified by STATEFP 22) with the highest non-null expected annual building loss due to riverine flooding. List their 11-digit GEOIDs.",
+    "sql": "SELECT n.GEOID AS tract_geoid FROM nri n JOIN census_tracts t ON n.GEOID = t.GEOID WHERE t.STATEFP = '22' AND n.RFLD_EALB IS NOT NULL ORDER BY CAST(n.RFLD_EALB AS DOUBLE) DESC LIMIT 5;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0070",
+    "question": "Top 3 Florida counties (identified by STATEFP 12) with the highest number of hospitals located in ZIP codes starting with '33'. Return their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON h.COUNTYFIPS = c.GEOID WHERE h.STATEFP = '12' AND h.ZIP LIKE '33%' GROUP BY c.NAME ORDER BY COUNT(*) DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0071",
+    "question": "Among Louisiana counties (STATEFP 22) north of latitude 31.0, which has the highest non-null average payout per NFIP claim for building contents? Return its county name.",
+    "sql": "SELECT c.NAME AS county_name FROM claims cl JOIN county c ON LEFT(cl.GEOID, 5) = c.GEOID WHERE c.STATEFP = '22' AND cl.amountPaidOnContentsClaim IS NOT NULL AND ST_Y(ST_Centroid(c.geometry)) > 31.0 GROUP BY c.NAME ORDER BY AVG(CAST(cl.amountPaidOnContentsClaim AS DOUBLE)) DESC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based with spatial condition",
+    "output_type": "scalar(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0072",
+    "question": "How many Louisiana tracts (identified by GEOID starting with 22) with NFIP claims have an estimated limited English proficiency population greater than 500?",
+    "sql": "SELECT COUNT(*) AS num_high_limited_english FROM svi s JOIN (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '22%') cl ON s.GEOID = cl.GEOID WHERE s.E_LIMENG > 500;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_high_limited_english')",
+    "expected_columns": ["num_high_limited_english"]
+  },
+  {
+    "id": "L1_0073",
+    "question": "Average non-null coastal flood risk score among Texas tracts (identified by STATEFP 48) that have at least one NFIP claim.",
+    "sql": "SELECT AVG(n.CFLD_RISKS) AS avg_coastal_risk FROM nri n JOIN (SELECT DISTINCT GEOID FROM claims WHERE STATEFP = '48') cl ON n.GEOID = cl.GEOID WHERE n.CFLD_RISKS IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_coastal_risk')",
+    "expected_columns": ["avg_coastal_risk"]
+  },
+  {
+    "id": "L1_0074",
+    "question": "In Miami-Dade, FL (identified by GEOID starting with 12086), how many NFIP claims occurred in tracts where at least 20% of households have no vehicle available?",
+    "sql": "SELECT COUNT(*) AS num_claims FROM claims cl JOIN svi s ON cl.GEOID = s.GEOID WHERE cl.GEOID LIKE '12086%' AND s.EP_NOVEH >= 20;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_claims')",
+    "expected_columns": ["num_claims"]
+  },
+  {
+    "id": "L1_0075",
+    "question": "Average non-null estimated percent of minority population in Texas tracts (identified by STATEFP 48) with NFIP claims since 2015-01-01.",
+    "sql": "WITH claim_tracts AS (SELECT DISTINCT GEOID FROM claims WHERE STATEFP='48' AND dateOfLoss >= DATE '2015-01-01') SELECT AVG(s.EP_MINRTY) AS avg_minority_pct FROM svi s JOIN claim_tracts t ON s.GEOID=t.GEOID WHERE s.EP_MINRTY IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_minority_pct')",
+    "expected_columns": ["avg_minority_pct"]
+  },
+  {
+    "id": "L1_0076",
+    "question": "Top 10 Louisiana counties (identified by STATEFP 22) with the highest total non-null riverine flood expected building exposure. List their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM nri n JOIN county c ON LEFT(n.GEOID, 5) = c.GEOID WHERE c.STATEFP = '22' AND n.RFLD_EXPB IS NOT NULL GROUP BY c.NAME ORDER BY SUM(CAST(n.RFLD_EXPB AS DOUBLE)) DESC LIMIT 10;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0077",
+    "question": "Top 3 Florida tracts (identified by STATEFP 12) with the highest non-null coastal flood expected annual building loss. List their 11-digit GEOIDs.",
+    "sql": "SELECT n.GEOID AS tract_geoid FROM nri n JOIN census_tracts t ON n.GEOID = t.GEOID WHERE t.STATEFP = '12' AND n.CFLD_EALB IS NOT NULL ORDER BY CAST(n.CFLD_EALB AS DOUBLE) DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0078",
+    "question": "In St. Bernard Parish, LA (identified by GEOID starting with 22087), how many NFIP claims occurred in tracts where at least 35% of individuals have three or more components of social vulnerability?",
+    "sql": "SELECT COUNT(*) AS num_claims FROM claims cl JOIN cre cr ON cl.GEOID = cr.GEOID WHERE cl.GEOID LIKE '22087%' AND cr.PRED3_PE >= 35;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_claims')",
+    "expected_columns": ["num_claims"]
+  },
+  {
+    "id": "L1_0079",
+    "question": "Top 10 Florida counties (identified by STATEFP 12) with the highest Payout amount for building structure damage. List their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM claims cl JOIN county c ON LEFT(cl.GEOID, 5) = c.GEOID WHERE c.STATEFP = '12' GROUP BY c.NAME ORDER BY SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) DESC LIMIT 10;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0080",
+    "question": "Top 10 Texas counties (identified by STATEFP 48) with the highest total non-null expected building exposure value for coastal flooding. List their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM nri n JOIN county c ON LEFT(n.GEOID, 5) = c.GEOID WHERE c.STATEFP = '48' AND n.CFLD_EXPB IS NOT NULL GROUP BY c.NAME ORDER BY SUM(CAST(n.CFLD_EXPB AS DOUBLE)) DESC LIMIT 10;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0081",
+    "question": "The 4th highest Florida county (identified by STATEFP 12) by Payout amount for building structure damage. List the county name.",
+    "sql": "SELECT c.NAME AS county_name FROM claims cl JOIN county c ON LEFT(cl.GEOID, 5) = c.GEOID WHERE c.STATEFP = '12' GROUP BY c.NAME ORDER BY SUM(CAST(cl.amountPaidOnBuildingClaim AS DOUBLE)) DESC LIMIT 1 OFFSET 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0082",
+    "question": "Average CRE percentage of individuals with one to two components of social vulnerability in Florida tracts (identified by STATEFP 12) with NFIP claims since 2015-01-01.",
+    "sql": "WITH claim_tracts AS (SELECT DISTINCT GEOID FROM claims WHERE STATEFP = '12' AND dateOfLoss >= DATE '2015-01-01') SELECT AVG(cr.PRED12_PE) AS avg_mid_resilience FROM cre cr JOIN claim_tracts t ON cr.GEOID = t.GEOID WHERE cr.PRED12_PE IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_mid_resilience')",
+    "expected_columns": ["avg_mid_resilience"]
+  },
+  {
+    "id": "L1_0083",
+    "question": "Top 3 Duval County, FL (identified by GEOID starting with 12031) tracts with NFIP claims ranked by the largest non-null margin of error for percent of youth population aged 17 and younger. List their 11-digit GEOIDs.",
+    "sql": "SELECT s.GEOID AS tract_geoid FROM svi s JOIN (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '12031%') cl ON s.GEOID = cl.GEOID WHERE s.MP_AGE17 IS NOT NULL ORDER BY s.MP_AGE17 DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0084",
+    "question": "Among East Baton Rouge Parish, LA (identified by GEOID starting with 22033) tracts with NFIP claims, which tract has the smallest non-null tract area in square miles? Return its 11-digit GEOID.",
+    "sql": "SELECT s.GEOID AS tract_geoid FROM svi s JOIN (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '22033%') cl ON s.GEOID = cl.GEOID WHERE s.AREA_SQMI IS NOT NULL ORDER BY s.AREA_SQMI ASC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0085",
+    "question": "How many Texas tracts (identified by GEOID starting with 48) with NFIP claims since 2020-01-01 have an estimated number of households with no vehicle available greater than 200?",
+    "sql": "SELECT COUNT(*) AS num_no_vehicle FROM svi s JOIN (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '48%' AND dateOfLoss >= DATE '2020-01-01') cl ON s.GEOID = cl.GEOID WHERE s.E_NOVEH > 200;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_no_vehicle')",
+    "expected_columns": ["num_no_vehicle"]
+  },
+  {
+    "id": "L1_0086",
+    "question": "How many Texas tracts (identified by STATEFP 48) have an estimated number of single-parent households greater than 500?",
+    "sql": "SELECT COUNT(*) AS num_single_parent_high FROM census_tracts t JOIN svi s ON t.GEOID = s.GEOID WHERE t.STATEFP = '48' AND s.E_SNGPNT > 500;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_single_parent_high')",
+    "expected_columns": ["num_single_parent_high"]
+  },
+  {
+    "id": "L1_0087",
+    "question": "Top 5 Louisiana counties (identified by STATEFP 22) ranked by total expected population exposure to coastal flooding. List their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM nri n JOIN county c ON LEFT(n.GEOID, 5) = c.GEOID WHERE c.STATEFP = '22' AND n.CFLD_EXPP IS NOT NULL GROUP BY c.NAME ORDER BY SUM(CAST(n.CFLD_EXPP AS DOUBLE)) DESC LIMIT 5;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0088",
+    "question": "Which Florida county (identified by STATEFP 12) has the fewest hospitals? Return its county name.",
+    "sql": "SELECT c.NAME AS county_name FROM hospitals h JOIN county c ON h.COUNTYFIPS = c.GEOID WHERE c.STATEFP = '12' GROUP BY c.NAME ORDER BY COUNT(*) ASC LIMIT 1;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0089",
+    "question": "Top 4 Texas census tracts (identified by STATEFP 48) with the highest non-null riverine expected annual building loss. List their 11-digit GEOIDs.",
+    "sql": "SELECT t.GEOID AS tract_geoid FROM census_tracts t JOIN nri n ON t.GEOID = n.GEOID WHERE t.STATEFP = '48' AND n.RFLD_EALB IS NOT NULL ORDER BY CAST(n.RFLD_EALB AS DOUBLE) DESC LIMIT 4;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0090",
+    "question": "How many Texas tracts (identified by GEOID starting with 48) with NFIP claims since 2020-01-01 have an estimated number of households with high housing cost burden greater than 800?",
+    "sql": "SELECT COUNT(*) AS num_high_housing_burden FROM svi s JOIN (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '48%' AND dateOfLoss >= DATE '2020-01-01') cl ON s.GEOID = cl.GEOID WHERE s.E_HBURD > 800;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_high_housing_burden')",
+    "expected_columns": ["num_high_housing_burden"]
+  },
+  {
+    "id": "L1_0091",
+    "question": "Average proportion of water-only census tracts (where WATER_TRACT = 1) among Louisiana tracts (STATEFP 22) that have at least one NFIP claim.",
+    "sql": "SELECT AVG(CASE WHEN cr.WATER_TRACT = 1 THEN 1 ELSE 0 END) AS avg_water_tract_ratio FROM cre cr JOIN (SELECT DISTINCT GEOID FROM claims WHERE STATEFP='22') cl ON cr.GEOID = cl.GEOID;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_water_tract_ratio')",
+    "expected_columns": ["avg_water_tract_ratio"]
+  },
+  {
+    "id": "L1_0092",
+    "question": "Top 5 Texas counties (identified by STATEFP 48) ranked by average CRE percentage of individuals with zero components of social vulnerability. List their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM cre cr JOIN county c ON LEFT(cr.GEOID, 5) = c.GEOID WHERE c.STATEFP = '48' GROUP BY c.NAME ORDER BY AVG(cr.PRED0_PE) DESC LIMIT 5;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0093",
+    "question": "Average non-null riverine flood expected annual land loss among Florida tracts (identified by STATEFP 12) with NFIP claims.",
+    "sql": "SELECT AVG(CAST(n.RFLD_EALA AS DOUBLE)) AS avg_land_loss FROM nri n JOIN (SELECT DISTINCT GEOID FROM claims WHERE STATEFP='12') cl ON n.GEOID = cl.GEOID WHERE n.RFLD_EALA IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_land_loss')",
+    "expected_columns": ["avg_land_loss"]
+  },
+  {
+    "id": "L1_0094",
+    "question": "Top 3 Louisiana tracts (identified by STATEFP 22) with the highest non-null percent of elderly population (aged 65 and older). List their 11-digit GEOIDs.",
+    "sql": "SELECT s.GEOID AS tract_geoid FROM svi s JOIN census_tracts t ON s.GEOID = t.GEOID WHERE t.STATEFP = '22' AND s.EP_AGE65 IS NOT NULL ORDER BY s.EP_AGE65 DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0095",
+    "question": "Average non-null percentage of individuals with three plus components of social vulnerability with three or more vulnerability components in Florida tracts (identified by STATEFP 12) with claims since 2010-01-01.",
+    "sql": "WITH claim_tracts AS (SELECT DISTINCT GEOID FROM claims WHERE STATEFP = '12' AND dateOfLoss >= DATE '2010-01-01') SELECT AVG(cr.PRED3_PE) AS avg_vulnerable_pct FROM cre cr JOIN claim_tracts t ON cr.GEOID = t.GEOID WHERE cr.PRED3_PE IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_vulnerable_pct')",
+    "expected_columns": ["avg_vulnerable_pct"]
+  },
+  {
+    "id": "L1_0096",
+    "question": "Top 5 Texas counties (identified by STATEFP 48) with the highest average non-null coastal flood expected population exposure. List their county names.",
+    "sql": "SELECT c.NAME AS county_name FROM nri n JOIN county c ON LEFT(n.GEOID, 5) = c.GEOID WHERE c.STATEFP = '48' AND n.CFLD_EXPPE IS NOT NULL GROUP BY c.NAME ORDER BY AVG(CAST(n.CFLD_EXPPE AS DOUBLE)) DESC LIMIT 5;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='county_name')",
+    "expected_columns": ["county_name"]
+  },
+  {
+    "id": "L1_0097",
+    "question": "How many Orleans Parish, LA (identified by GEOID starting with 22071) tracts with NFIP claims have an estimated minority percentage greater than 70?",
+    "sql": "SELECT COUNT(*) AS num_high_minority FROM svi s JOIN (SELECT DISTINCT GEOID FROM claims WHERE GEOID LIKE '22071%') cl ON s.GEOID = cl.GEOID WHERE s.EP_MINRTY > 70;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='num_high_minority')",
+    "expected_columns": ["num_high_minority"]
+  },
+  {
+    "id": "L1_0098",
+    "question": "Top 3 Florida tracts (identified by STATEFP 12) with the highest population universe used in tract-level resilience estimation. List their 11-digit GEOIDs.",
+    "sql": "SELECT cr.GEOID AS tract_geoid FROM cre cr JOIN census_tracts t ON cr.GEOID = t.GEOID WHERE t.STATEFP = '12' AND cr.POPUNI IS NOT NULL ORDER BY cr.POPUNI DESC LIMIT 3;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  },
+  {
+    "id": "L1_0099",
+    "question": "Average non-null coastal flood expected building exposure for coastal flooding among Texas tracts (identified by STATEFP 48) that experienced NFIP claims since 2015.",
+    "sql": "SELECT AVG(CAST(n.CFLD_EXPB AS DOUBLE)) AS avg_exposure FROM nri n JOIN (SELECT DISTINCT GEOID FROM claims WHERE STATEFP='48' AND dateOfLoss >= DATE '2015-01-01') cl ON n.GEOID = cl.GEOID WHERE n.CFLD_EXPB IS NOT NULL;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "scalar(column='avg_exposure')",
+    "expected_columns": ["avg_exposure"]
+  },
+  {
+    "id": "L1_0100",
+    "question": "Top 5 Louisiana tracts (identified by STATEFP 22) with the highest non-null percent of population without health insurance (EP_UNINSUR). List their 11-digit GEOIDs.",
+    "sql": "SELECT s.GEOID AS tract_geoid FROM svi s JOIN census_tracts t ON s.GEOID = t.GEOID WHERE t.STATEFP = '22' AND s.EP_UNINSUR IS NOT NULL ORDER BY s.EP_UNINSUR DESC LIMIT 5;",
+    "level": "L1",
+    "category": "double table key-based",
+    "output_type": "list(column='tract_geoid')",
+    "expected_columns": ["tract_geoid"]
+  }
+]

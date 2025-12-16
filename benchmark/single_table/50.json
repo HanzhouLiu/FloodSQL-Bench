@@ -1,0 +1,452 @@
+[
+  {
+    "id": "L0_0001",
+    "question": "In Harris County, Texas (identified by GEOID starting with 48201), how many NFIP claims have a dateOfLoss on or after 2010-01-01?",
+    "sql": "SELECT COUNT(*) AS num_claims FROM claims WHERE GEOID LIKE '48201%' AND dateOfLoss >= DATE '2010-01-01';",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='num_claims')",
+    "expected_columns": ["num_claims"]
+  },
+  {
+    "id": "L0_0002",
+    "question": "What is the total area of valid FEMA Flood Hazard Zone polygons in Florida (STATEFP = '12') labeled as AE?",
+    "sql": "SELECT SUM(ST_Area(geometry)) AS total_ae_area FROM floodplain WHERE STATEFP='12' AND FLD_ZONE='AE' AND ST_IsValid(geometry);",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='total_ae_area')",
+    "expected_columns": ["total_ae_area"]
+  },
+  {
+    "id": "L0_0003",
+    "question": "Return the total number of NFIP claims recorded in Texas (identified by GEOID starting with 48).",
+    "sql": "SELECT COUNT(*) AS num_claims FROM claims WHERE GEOID LIKE '48%';",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='num_claims')",
+    "expected_columns": ["num_claims"]
+  },
+  {
+    "id": "L0_0004",
+    "question": "Return the average non-null insurance payout amount (in USD) for structural building damage among all NFIP claims in Louisiana (identified by GEOID starting with 22).",
+    "sql": "SELECT AVG(CAST(amountPaidOnBuildingClaim AS DOUBLE)) AS avg_building_payout FROM claims WHERE GEOID LIKE '22%' AND amountPaidOnBuildingClaim IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='avg_building_payout')",
+    "expected_columns": ["avg_building_payout"]
+  },
+  {
+    "id": "L0_0005",
+    "question": "Return the maximum non-null NFIP Insurance payout amount (in USD) for damage to building contents observed across all claims in Florida (identified by GEOID starting with 12).",
+    "sql": "SELECT MAX(CAST(amountPaidOnContentsClaim AS DOUBLE)) AS max_contents_payout FROM claims WHERE GEOID LIKE '12%' AND amountPaidOnContentsClaim IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='max_contents_payout')",
+    "expected_columns": ["max_contents_payout"]
+  },
+  {
+    "id": "L0_0006",
+    "question": "Return the number of NFIP claims in Texas (identified by GEOID starting with 48) with zero insurance payout amount (in USD) for Increased Cost of Compliance (ICC).",
+    "sql": "SELECT COUNT(*) AS num_zero_icc FROM claims WHERE GEOID LIKE '48%' AND amountPaidOnIncreasedCostOfComplianceClaim IS NOT NULL AND CAST(amountPaidOnIncreasedCostOfComplianceClaim AS DOUBLE) = 0;",
+    "level": "L0",
+    "category": "single table (filter and count)",
+    "output_type": "scalar(column='num_zero_icc')",
+    "expected_columns": ["num_zero_icc"]
+  },
+  {
+    "id": "L0_0007",
+    "question": "What is the earliest recorded NFIP claim date in Florida (identified by GEOID starting with 12)?",
+    "sql": "SELECT MIN(dateOfLoss) AS earliest_date FROM claims WHERE GEOID LIKE '12%';",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='earliest_date')",
+    "expected_columns": ["earliest_date"]
+  },
+  {
+    "id": "L0_0008",
+    "question": "What is the total sum of non-null NFIP Insurance payout amount (in USD) for structural building damage across all claims in Louisiana (identified by GEOID starting with 22)?",
+    "sql": "SELECT SUM(CAST(amountPaidOnBuildingClaim AS DOUBLE)) AS total_building FROM claims WHERE GEOID LIKE '22%' AND amountPaidOnBuildingClaim IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='total_building')",
+    "expected_columns": ["total_building"]
+  },
+  {
+    "id": "L0_0009",
+    "question": "What is the total non-null expected annual loss for buildings caused by riverine flooding in Harris County, TX (identified by GEOID starting with 48201)?",
+    "sql": "SELECT SUM(CAST(RFLD_EALB AS DOUBLE)) AS total_riverine_loss FROM nri WHERE GEOID LIKE '48201%' AND RFLD_EALB IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='total_riverine_loss')",
+    "expected_columns": ["total_riverine_loss"]
+  },
+  {
+    "id": "L0_0010",
+    "question": "List the top 5 census tracts in Louisiana (identified by GEOID starting with 22) with the largest CRE modeling population. Return their GEOIDs.",
+    "sql": "SELECT GEOID FROM cre WHERE GEOID LIKE '22%' AND POPUNI IS NOT NULL ORDER BY CAST(POPUNI AS DOUBLE) DESC LIMIT 5;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "list(column='GEOID')",
+    "expected_columns": ["GEOID"]
+  },
+  {
+    "id": "L0_0011",
+    "question": "Return the total area of FEMA floodplain polygons labeled as AE in Florida (STATEFP = '12').",
+    "sql": "SELECT SUM(ST_Area(geometry)) AS total_ae_area FROM floodplain WHERE STATEFP = '12' AND FLD_ZONE = 'AE' AND ST_IsValid(geometry);",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='total_ae_area')",
+    "expected_columns": ["total_ae_area"]
+  },
+  {
+    "id": "L0_0012",
+    "question": "What is the largest FEMA topologically valid floodplain polygon area in Louisiana (identified by STATEFP 22)?",
+    "sql": "SELECT MAX(ST_Area(geometry)) AS max_area FROM floodplain WHERE STATEFP = '22' AND ST_IsValid(geometry);",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='max_area')",
+    "expected_columns": ["max_area"]
+  },
+  {
+    "id": "L0_0013",
+    "question": "Which county in Louisiana (STATEFP = '22') has the largest number of census tracts? Return its COUNTYFP.",
+    "sql": "SELECT COUNTYFP FROM census_tracts WHERE STATEFP='22' GROUP BY COUNTYFP ORDER BY COUNT(*) DESC LIMIT 1;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "list(column='COUNTYFP')",
+    "expected_columns": ["COUNTYFP"]
+  },
+  {
+    "id": "L0_0014",
+    "question": "Return the average area of topologically valid census tracts in Leon County, FL (identified by COUNTYFP = '073' and STATEFP = '12').",
+    "sql": "SELECT AVG(ST_Area(geometry)) AS avg_area FROM census_tracts WHERE STATEFP = '12' AND COUNTYFP = '073' AND ST_IsValid(geometry);",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='avg_area')",
+    "expected_columns": ["avg_area"]
+  },
+  {
+    "id": "L0_0015",
+    "question": "Return the fraction (0-1) of Texas census tracts (identified by GEOID starting with 48) where the non-null estimated percent of population with no Internet access is greater than 20%.",
+    "sql": "SELECT SUM(CASE WHEN EP_NOINT > 20 THEN 1 ELSE 0 END) * 1.0 / COUNT(*) AS frac_high_no_internet FROM svi WHERE GEOID LIKE '48%' AND EP_NOINT IS NOT NULL;",
+    "level": "L0",
+    "category": "single table (fraction computation)",
+    "output_type": "scalar(column='frac_high_no_internet')",
+    "expected_columns": ["frac_high_no_internet"]
+  },
+  {
+    "id": "L0_0016",
+    "question": "What is the average non-null percentage with three plus components of social vulnerability all tracts in Texas (identified by GEOID starting with 48)?",
+    "sql": "SELECT AVG(PRED3_PE) AS avg_pred3_pe FROM cre WHERE GEOID LIKE '48%' AND PRED3_PE IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='avg_pred3_pe')",
+    "expected_columns": ["avg_pred3_pe"]
+  },
+  {
+    "id": "L0_0017",
+    "question": "Return the maximum non-null estimated number of individuals with one or two components of social vulnerability in Florida (identified by GEOID starting with 12).",
+    "sql": "SELECT MAX(CAST(PRED12_E AS DOUBLE)) AS max_pred12_e FROM cre WHERE GEOID LIKE '12%' AND PRED12_E IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='max_pred12_e')",
+    "expected_columns": ["max_pred12_e"]
+  },
+  {
+    "id": "L0_0018",
+    "question": "What percentage of census tracts composed completely of water in Monroe County, Florida (identified by GEOID starting with 12087)?",
+    "sql": "SELECT 100.0 * SUM(CASE WHEN WATER_TRACT = 1 THEN 1 ELSE 0 END) / COUNT(*) AS pct_with_water FROM cre WHERE LEFT(GEOID, 5) = '12087';",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='pct_with_water')",
+    "expected_columns": ["pct_with_water"]
+  },
+  {
+    "id": "L0_0019",
+    "question": "Return the average non-null annual frequency of riverine flood events in Texas (identified by GEOID starting with 48).",
+    "sql": "SELECT AVG(RFLD_AFREQ) AS avg_flood_frequency FROM nri WHERE GEOID LIKE '48%' AND RFLD_AFREQ IS NOT NULL;",
+    "level": "L0",
+    "category": "single table (average computation)",
+    "output_type": "scalar(column='avg_flood_frequency')",
+    "expected_columns": ["avg_flood_frequency"]
+  },
+  {
+    "id": "L0_0020",
+    "question": "List the top 3 most frequent riverine flood risk rating categories in Louisiana (identified by GEOID starting with 22).",
+    "sql": "SELECT RFLD_RISKR FROM nri WHERE GEOID LIKE '22%' GROUP BY RFLD_RISKR ORDER BY COUNT(*) DESC LIMIT 3;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "list(column='RFLD_RISKR')",
+    "expected_columns": ["RFLD_RISKR"]
+  },
+  {
+    "id": "L0_0021",
+    "question": "What is the total non-null estimated number of households in Florida (identified by GEOID starting with '12')?",
+    "sql": "SELECT SUM(CAST(E_HH AS DOUBLE)) AS total_households FROM svi WHERE CAST(FIPS AS VARCHAR) LIKE '12%' AND E_HH IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='total_households')",
+    "expected_columns": ["total_households"]
+  },
+  {
+    "id": "L0_0022",
+    "question": "Return the maximum non-null estimated total population count in Louisiana (identified by GEOID starting with 22) according to the SVI table.",
+    "sql": "SELECT MAX(CAST(E_TOTPOP AS DOUBLE)) AS max_pop FROM svi WHERE GEOID LIKE '22%' AND E_TOTPOP IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='max_pop')",
+    "expected_columns": ["max_pop"]
+  },
+  {
+    "id": "L0_0023",
+    "question": "What is the number of records in the SVI dataset for Texas (identified by GEOID starting with 48)?",
+    "sql": "SELECT COUNT(*) AS num_records FROM svi WHERE GEOID LIKE '48%';",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='num_records')",
+    "expected_columns": ["num_records"]
+  },
+  {
+    "id": "L0_0024",
+    "question": "Return the number of ZCTAs in Louisiana (identified by STATEFP 22).",
+    "sql": "SELECT COUNT(*) AS num_zctas FROM zcta WHERE STATEFP = '22';",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='num_zctas')",
+    "expected_columns": ["num_zctas"]
+  },
+  {
+    "id": "L0_0025",
+    "question": "How many ZCTAs in Texas (STATEFP = '48') have a geometry area greater than 0.5?",
+    "sql": "SELECT COUNT(*) AS num_large_zctas FROM zcta WHERE STATEFP = '48' AND ST_Area(geometry) > 0.5 AND ST_IsValid(geometry);",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='num_large_zctas')",
+    "expected_columns": ["num_large_zctas"]
+  },
+  {
+    "id": "L0_0026",
+    "question": "Return the average area of topologically valid ZCTAs in Florida (identified by STATEFP 12).",
+    "sql": "SELECT AVG(ST_Area(geometry)) AS avg_area FROM zcta WHERE STATEFP = '12' AND ST_IsValid(geometry);",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='avg_area')",
+    "expected_columns": ["avg_area"]
+  },
+  {
+    "id": "L0_0027",
+    "question": "What is the average non-null expected annual loss for population due to coastal flooding in Galveston County, TX (identified by GEOID starting with 48167)?",
+    "sql": "SELECT AVG(CAST(CFLD_EALP AS DOUBLE)) AS avg_cfld_ealp FROM nri WHERE GEOID LIKE '48167%' AND CFLD_EALP IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='avg_cfld_ealp')",
+    "expected_columns": ["avg_cfld_ealp"]
+  },
+  {
+    "id": "L0_0028",
+    "question": "How many hospitals are located west of longitude -92.0 in Louisiana (identified by STATEFP = '22')?",
+    "sql": "SELECT COUNT(*) AS num_hospitals_west FROM hospitals WHERE STATEFP = '22' AND LON < -92.0 AND LON IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='num_hospitals_west')",
+    "expected_columns": ["num_hospitals_west"]
+  },
+  {
+    "id": "L0_0029",
+    "question": "How many schools with valid latitude in Florida (identified by STATEFP = '12') are located south of latitude 27.5?",
+    "sql": "SELECT COUNT(*) AS num_schools_south FROM schools WHERE STATEFP = '12' AND LAT < 27.5 AND LAT IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='num_schools_south')",
+    "expected_columns": ["num_schools_south"]
+  },
+  {
+    "id": "L0_0030",
+    "question": "What is the westernmost longitude of schools in Texas (identified by STATEFP = '48')?",
+    "sql": "SELECT MIN(LON) AS min_lon FROM schools WHERE STATEFP = '48' AND LON IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='min_lon')",
+    "expected_columns": ["min_lon"]
+  },
+  {
+    "id": "L0_0031",
+    "question": "How many counties in Florida with valid geometry (STATEFP = '12') have their entire geometry west of longitude -82?",
+    "sql": "SELECT COUNT(*) AS num_west_counties FROM county WHERE STATEFP = '12' AND ST_XMax(geometry) < -82 AND ST_IsValid(geometry);",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='num_west_counties')",
+    "expected_columns": ["num_west_counties"]
+  },
+  {
+    "id": "L0_0032",
+    "question": "Return the average land area of topologically valid counties in Texas (identified by STATEFP 48).",
+    "sql": "SELECT AVG(ST_Area(geometry)) AS avg_area FROM county WHERE STATEFP = '48' AND ST_IsValid(geometry);",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='avg_area')",
+    "expected_columns": ["avg_area"]
+  },
+  {
+    "id": "L0_0033",
+    "question": "How many distinct non-null cities have hospitals recorded in Louisiana (STATEFP = '22')?",
+    "sql": "SELECT COUNT(DISTINCT CITY) AS num_cities FROM hospitals WHERE STATEFP='22' AND CITY IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='num_cities')",
+    "expected_columns": ["num_cities"]
+  },
+  {
+    "id": "L0_0034",
+    "question": "What is the average population universe for all tracts in Louisiana (identified by GEOID starting with '22')?",
+    "sql": "SELECT AVG(POPUNI) AS average_popuni FROM cre WHERE GEOID LIKE '22%';",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='average_popuni')",
+    "expected_columns": ["average_popuni"]
+  },
+  {
+    "id": "L0_0035",
+    "question": "Return the number of NFIP claims filed before 1990 in Texas (identified by GEOID starting with 48).",
+    "sql": "SELECT COUNT(*) AS num_old_claims FROM claims WHERE GEOID LIKE '48%' AND dateOfLoss < DATE '1990-01-01';",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='num_old_claims')",
+    "expected_columns": ["num_old_claims"]
+  },
+  {
+    "id": "L0_0036",
+    "question": "What is the total number of unique FEMA Flood Hazard Zone codes in the floodplain table (any type of labels is accepted even if it is invalid or X)?",
+    "sql": "SELECT COUNT(DISTINCT FLD_ZONE) AS num_zones FROM floodplain;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='num_zones')",
+    "expected_columns": ["num_zones"]
+  },
+  {
+    "id": "L0_0037",
+    "question": "What percentage of Texas census tracts (GEOID starting with '48') are composed completely of water?",
+    "sql": "SELECT 100.0 * COUNT(DISTINCT CASE WHEN WATER_TRACT = 1 THEN GEOID END) / COUNT(DISTINCT GEOID) AS pct_with_water FROM cre WHERE GEOID LIKE '48%';",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='pct_with_water')",
+    "expected_columns": ["pct_with_water"]
+  },
+  {
+    "id": "L0_0038",
+    "question": "What is the northernmost latitude (maximum LAT) of hospitals in Florida (identified by STATEFP = '12')?",
+    "sql": "SELECT MAX(LAT) AS max_lat FROM hospitals WHERE STATEFP = '12' AND LAT IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='max_lat')",
+    "expected_columns": ["max_lat"]
+  },
+  {
+    "id": "L0_0039",
+    "question": "Return the average ratio of non-null building payout to contents payout for NFIP claims in Louisiana (GEOID starting with 22). Only include records where contents payout is positive.",
+    "sql": "SELECT AVG(CAST(amountPaidOnBuildingClaim AS DOUBLE) / CAST(amountPaidOnContentsClaim AS DOUBLE)) AS avg_ratio FROM claims WHERE GEOID LIKE '22%' AND amountPaidOnBuildingClaim IS NOT NULL AND amountPaidOnContentsClaim IS NOT NULL AND CAST(amountPaidOnContentsClaim AS DOUBLE) > 0;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='avg_ratio')",
+    "expected_columns": ["avg_ratio"]
+  },
+  {
+    "id": "L0_0040",
+    "question": "Which census tract in Louisiana (STATEFP = '22') has the smallest geometry area? Return its 11-digit GEOID",
+    "sql": "SELECT GEOID FROM census_tracts WHERE STATEFP = '22' ORDER BY ST_Area(geometry) ASC LIMIT 1;",
+    "level": "L0",
+    "category": "single table (spatial)",
+    "output_type": "scalar(column='GEOID')",
+    "expected_columns": ["GEOID"]
+  },
+  {
+    "id": "L0_0041",
+    "question": "Return the average area of topologically valid census tracts across all the three states in the tract table.",
+    "sql": "SELECT AVG(ST_Area(geometry)) AS avg_area FROM census_tracts WHERE ST_IsValid(geometry);",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='avg_area')",
+    "expected_columns": ["avg_area"]
+  },
+  {
+    "id": "L0_0042",
+    "question": "What is the average non-null estimated total population for Texas (GEOID starting with 48) across SVI tracts for each state?",
+    "sql": "SELECT AVG(CAST(E_TOTPOP AS DOUBLE)) AS avg_pop FROM svi WHERE GEOID LIKE '48%' AND E_TOTPOP IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='avg_pop')",
+    "expected_columns": ["avg_pop"]
+  },
+  {
+    "id": "L0_0043",
+    "question": "Return the total area of all topologically valid floodplain polygons in Texas (identified by STATEFP 48).",
+    "sql": "SELECT SUM(ST_Area(geometry)) AS total_area FROM floodplain WHERE STATEFP = '48' AND ST_IsValid(geometry);",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='total_area')",
+    "expected_columns": ["total_area"]
+  },
+  {
+    "id": "L0_0044",
+    "question": "What is the number of schools with missing (null) coordinates in Louisiana (identified by STATEFP 22)?",
+    "sql": "SELECT COUNT(*) AS num_missing FROM schools WHERE STATEFP = '22' AND (LAT IS NULL OR LON IS NULL);",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='num_missing')",
+    "expected_columns": ["num_missing"]
+  },
+  {
+    "id": "L0_0045",
+    "question": "What is the average non-null coastal flood risk score in Florida (identified by GEOID starting with 12)?",
+    "sql": "SELECT AVG(CFLD_RISKS) AS avg_coastal_risk FROM nri WHERE GEOID LIKE '12%' AND CFLD_RISKS IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='avg_coastal_risk')",
+    "expected_columns": ["avg_coastal_risk"]
+  },
+  {
+    "id": "L0_0046",
+    "question": "Which state (identified by STATEFP) contains the largest number of topologically valid FEMA floodplain polygons overall? Return its STATEFP code.",
+    "sql": "SELECT STATEFP FROM floodplain WHERE ST_IsValid(geometry) GROUP BY STATEFP ORDER BY COUNT(*) DESC LIMIT 1;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "list(column='STATEFP')",
+    "expected_columns": ["STATEFP"]
+  },
+  {
+    "id": "L0_0047",
+    "question": "How many NFIP claims in Louisiana (identified by GEOID starting with 22) with missing dateOfLoss values?",
+    "sql": "SELECT COUNT(*) AS num_missing_date FROM claims WHERE GEOID LIKE '22%' AND dateOfLoss IS NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='num_missing_date')",
+    "expected_columns": ["num_missing_date"]
+  },
+  {
+    "id": "L0_0048",
+    "question": "Return the average non-null percentage of individuals with one or two components of social vulnerability across all tracts in Florida (identified by GEOID starting with 12).",
+    "sql": "SELECT AVG(PRED12_PE) AS avg_pred12_pe FROM cre WHERE GEOID LIKE '12%' AND PRED12_PE IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='avg_pred12_pe')",
+    "expected_columns": ["avg_pred12_pe"]
+  },
+  {
+    "id": "L0_0049",
+    "question": "Which city across all states has the largest number of colleges recorded in the schools table? Return its city name in uppercase.",
+    "sql": "SELECT CITY FROM schools WHERE TYPE = 'COLLEGE' GROUP BY CITY ORDER BY COUNT(*) DESC LIMIT 1;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='CITY')",
+    "expected_columns": ["CITY"]
+  },
+  {
+    "id": "L0_0050",
+    "question": "What is the average non-null NFIP building payout across all claims in all three states?",
+    "sql": "SELECT AVG(CAST(amountPaidOnBuildingClaim AS DOUBLE)) AS avg_payout FROM claims WHERE amountPaidOnBuildingClaim IS NOT NULL;",
+    "level": "L0",
+    "category": "single table",
+    "output_type": "scalar(column='avg_payout')",
+    "expected_columns": ["avg_payout"]
+  }
+]

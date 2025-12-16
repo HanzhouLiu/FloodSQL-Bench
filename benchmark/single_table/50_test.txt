@@ -1,0 +1,356 @@
+================================================================================
+[L0_0001] In Harris County, Texas (identified by GEOID starting with 48201), how many NFIP claims have a dateOfLoss on or after 2010-01-01?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_claims FROM claims WHERE GEOID LIKE '48201%' AND dateOfLoss >= DATE '2010-01-01';
+
+Success (1 rows, 0.054 sec)
+  75192
+================================================================================
+[L0_0002] What is the total area of valid FEMA Flood Hazard Zone polygons in Florida (STATEFP = '12') labeled as AE?
+--------------------------------------------------------------------------------
+SELECT SUM(ST_Area(geometry)) AS total_ae_area FROM floodplain WHERE STATEFP='12' AND FLD_ZONE='AE' AND ST_IsValid(geometry);
+
+Success (1 rows, 2.033 sec)
+  2.4131283024771886
+================================================================================
+[L0_0003] Return the total number of NFIP claims recorded in Texas (identified by GEOID starting with 48).
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_claims FROM claims WHERE GEOID LIKE '48%';
+
+Success (1 rows, 0.010 sec)
+  381244
+================================================================================
+[L0_0004] Return the average non-null insurance payout amount (in USD) for structural building damage among all NFIP claims in Louisiana (identified by GEOID starting with 22).
+--------------------------------------------------------------------------------
+SELECT AVG(CAST(amountPaidOnBuildingClaim AS DOUBLE)) AS avg_building_payout FROM claims WHERE GEOID LIKE '22%' AND amountPaidOnBuildingClaim IS NOT NULL;
+
+Success (1 rows, 0.018 sec)
+  43386.06609139753
+================================================================================
+[L0_0005] Return the maximum non-null NFIP Insurance payout amount (in USD) for damage to building contents observed across all claims in Florida (identified by GEOID starting with 12).
+--------------------------------------------------------------------------------
+SELECT MAX(CAST(amountPaidOnContentsClaim AS DOUBLE)) AS max_contents_payout FROM claims WHERE GEOID LIKE '12%' AND amountPaidOnContentsClaim IS NOT NULL;
+
+Success (1 rows, 0.020 sec)
+  500000.0
+================================================================================
+[L0_0006] Return the number of NFIP claims in Texas (identified by GEOID starting with 48) with zero insurance payout amount (in USD) for Increased Cost of Compliance (ICC).
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_zero_icc FROM claims WHERE GEOID LIKE '48%' AND amountPaidOnIncreasedCostOfComplianceClaim IS NOT NULL AND CAST(amountPaidOnIncreasedCostOfComplianceClaim AS DOUBLE) = 0;
+
+Success (1 rows, 0.013 sec)
+  305496
+================================================================================
+[L0_0007] What is the earliest recorded NFIP claim date in Florida (identified by GEOID starting with 12)?
+--------------------------------------------------------------------------------
+SELECT MIN(dateOfLoss) AS earliest_date FROM claims WHERE GEOID LIKE '12%';
+
+Success (1 rows, 0.009 sec)
+  1978-01-01
+================================================================================
+[L0_0008] What is the total sum of non-null NFIP Insurance payout amount (in USD) for structural building damage across all claims in Louisiana (identified by GEOID starting with 22)?
+--------------------------------------------------------------------------------
+SELECT SUM(CAST(amountPaidOnBuildingClaim AS DOUBLE)) AS total_building FROM claims WHERE GEOID LIKE '22%' AND amountPaidOnBuildingClaim IS NOT NULL;
+
+Success (1 rows, 0.017 sec)
+  16361840016.52002
+================================================================================
+[L0_0009] What is the total non-null expected annual loss for buildings caused by riverine flooding in Harris County, TX (identified by GEOID starting with 48201)?
+--------------------------------------------------------------------------------
+SELECT SUM(CAST(RFLD_EALB AS DOUBLE)) AS total_riverine_loss FROM nri WHERE GEOID LIKE '48201%' AND RFLD_EALB IS NOT NULL;
+
+Success (1 rows, 0.013 sec)
+  648371644.6639426
+================================================================================
+[L0_0010] List the top 5 census tracts in Louisiana (identified by GEOID starting with 22) with the largest CRE modeling population. Return their GEOIDs.
+--------------------------------------------------------------------------------
+SELECT GEOID FROM cre WHERE GEOID LIKE '22%' AND POPUNI IS NOT NULL ORDER BY CAST(POPUNI AS DOUBLE) DESC LIMIT 5;
+
+Success (5 rows, 0.063 sec)
+  22019001700
+  22103040309
+  22015011122
+  22063040812
+  22105954601
+================================================================================
+[L0_0011] Return the total area of FEMA floodplain polygons labeled as AE in Florida (STATEFP = '12').
+--------------------------------------------------------------------------------
+SELECT SUM(ST_Area(geometry)) AS total_ae_area FROM floodplain WHERE STATEFP = '12' AND FLD_ZONE = 'AE' AND ST_IsValid(geometry);
+
+Success (1 rows, 1.804 sec)
+  2.4131283024771886
+================================================================================
+[L0_0012] What is the largest FEMA topologically valid floodplain polygon area in Louisiana (identified by STATEFP 22)?
+--------------------------------------------------------------------------------
+SELECT MAX(ST_Area(geometry)) AS max_area FROM floodplain WHERE STATEFP = '22' AND ST_IsValid(geometry);
+
+Success (1 rows, 5.534 sec)
+  0.3991437929961159
+================================================================================
+[L0_0013] Which county in Louisiana (STATEFP = '22') has the largest number of census tracts? Return its COUNTYFP.
+--------------------------------------------------------------------------------
+SELECT COUNTYFP FROM census_tracts WHERE STATEFP='22' GROUP BY COUNTYFP ORDER BY COUNT(*) DESC LIMIT 1;
+
+Success (1 rows, 1.419 sec)
+  071
+================================================================================
+[L0_0014] Return the average area of topologically valid census tracts in Leon County, FL (identified by COUNTYFP = '073' and STATEFP = '12').
+--------------------------------------------------------------------------------
+SELECT AVG(ST_Area(geometry)) AS avg_area FROM census_tracts WHERE STATEFP = '12' AND COUNTYFP = '073' AND ST_IsValid(geometry);
+
+Success (1 rows, 0.084 sec)
+  0.002160875154886079
+================================================================================
+[L0_0015] Return the fraction (0-1) of Texas census tracts (identified by GEOID starting with 48) where the non-null estimated percent of population with no Internet access is greater than 20%.
+--------------------------------------------------------------------------------
+SELECT SUM(CASE WHEN EP_NOINT > 20 THEN 1 ELSE 0 END) * 1.0 / COUNT(*) AS frac_high_no_internet FROM svi WHERE GEOID LIKE '48%' AND EP_NOINT IS NOT NULL;
+
+Success (1 rows, 0.193 sec)
+  0.22080185938407904
+================================================================================
+[L0_0016] What is the average non-null percentage with three plus components of social vulnerability all tracts in Texas (identified by GEOID starting with 48)?
+--------------------------------------------------------------------------------
+SELECT AVG(PRED3_PE) AS avg_pred3_pe FROM cre WHERE GEOID LIKE '48%' AND PRED3_PE IS NOT NULL;
+
+Success (1 rows, 0.006 sec)
+  22.813239559164746
+================================================================================
+[L0_0017] Return the maximum non-null estimated number of individuals with one or two components of social vulnerability in Florida (identified by GEOID starting with 12).
+--------------------------------------------------------------------------------
+SELECT MAX(CAST(PRED12_E AS DOUBLE)) AS max_pred12_e FROM cre WHERE GEOID LIKE '12%' AND PRED12_E IS NOT NULL;
+
+Success (1 rows, 0.002 sec)
+  11560.0
+================================================================================
+[L0_0018] What percentage of census tracts composed completely of water in Monroe County, Florida (identified by GEOID starting with 12087)?
+--------------------------------------------------------------------------------
+SELECT 100.0 * SUM(CASE WHEN WATER_TRACT = 1 THEN 1 ELSE 0 END) / COUNT(*) AS pct_with_water FROM cre WHERE LEFT(GEOID, 5) = '12087';
+
+Success (1 rows, 0.133 sec)
+  3.4482758620689653
+================================================================================
+[L0_0019] Return the average non-null annual frequency of riverine flood events in Texas (identified by GEOID starting with 48).
+--------------------------------------------------------------------------------
+SELECT AVG(RFLD_AFREQ) AS avg_flood_frequency FROM nri WHERE GEOID LIKE '48%' AND RFLD_AFREQ IS NOT NULL;
+
+Success (1 rows, 0.060 sec)
+  3.0601375369266424
+================================================================================
+[L0_0020] List the top 3 most frequent riverine flood risk rating categories in Louisiana (identified by GEOID starting with 22).
+--------------------------------------------------------------------------------
+SELECT RFLD_RISKR FROM nri WHERE GEOID LIKE '22%' GROUP BY RFLD_RISKR ORDER BY COUNT(*) DESC LIMIT 3;
+
+Success (3 rows, 0.007 sec)
+  Relatively Moderate
+  Relatively High    
+  Relatively Low     
+================================================================================
+[L0_0021] What is the total non-null estimated number of households in Florida (identified by GEOID starting with '12')?
+--------------------------------------------------------------------------------
+SELECT SUM(CAST(E_HH AS DOUBLE)) AS total_households FROM svi WHERE CAST(FIPS AS VARCHAR) LIKE '12%' AND E_HH IS NOT NULL;
+
+Success (1 rows, 0.050 sec)
+  8353441.0
+================================================================================
+[L0_0022] Return the maximum non-null estimated total population count in Louisiana (identified by GEOID starting with 22) according to the SVI table.
+--------------------------------------------------------------------------------
+SELECT MAX(CAST(E_TOTPOP AS DOUBLE)) AS max_pop FROM svi WHERE GEOID LIKE '22%' AND E_TOTPOP IS NOT NULL;
+
+Success (1 rows, 0.003 sec)
+  11689.0
+================================================================================
+[L0_0023] What is the number of records in the SVI dataset for Texas (identified by GEOID starting with 48)?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_records FROM svi WHERE GEOID LIKE '48%';
+
+Success (1 rows, 0.003 sec)
+  6884
+================================================================================
+[L0_0024] Return the number of ZCTAs in Louisiana (identified by STATEFP 22).
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_zctas FROM zcta WHERE STATEFP = '22';
+
+Success (1 rows, 0.048 sec)
+  1819
+================================================================================
+[L0_0025] How many ZCTAs in Texas (STATEFP = '48') have a geometry area greater than 0.5?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_large_zctas FROM zcta WHERE STATEFP = '48' AND ST_Area(geometry) > 0.5 AND ST_IsValid(geometry);
+
+Success (1 rows, 0.116 sec)
+  4
+================================================================================
+[L0_0026] Return the average area of topologically valid ZCTAs in Florida (identified by STATEFP 12).
+--------------------------------------------------------------------------------
+SELECT AVG(ST_Area(geometry)) AS avg_area FROM zcta WHERE STATEFP = '12' AND ST_IsValid(geometry);
+
+Success (1 rows, 0.060 sec)
+  0.013502219027391179
+================================================================================
+[L0_0027] What is the average non-null expected annual loss for population due to coastal flooding in Galveston County, TX (identified by GEOID starting with 48167)?
+--------------------------------------------------------------------------------
+SELECT AVG(CAST(CFLD_EALP AS DOUBLE)) AS avg_cfld_ealp FROM nri WHERE GEOID LIKE '48167%' AND CFLD_EALP IS NOT NULL;
+
+Success (1 rows, 0.003 sec)
+  0.00011290147991909902
+================================================================================
+[L0_0028] How many hospitals are located west of longitude -92.0 in Louisiana (identified by STATEFP = '22')?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_hospitals_west FROM hospitals WHERE STATEFP = '22' AND LON < -92.0 AND LON IS NOT NULL;
+
+Success (1 rows, 0.011 sec)
+  133
+================================================================================
+[L0_0029] How many schools with valid latitude in Florida (identified by STATEFP = '12') are located south of latitude 27.5?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_schools_south FROM schools WHERE STATEFP = '12' AND LAT < 27.5 AND LAT IS NOT NULL;
+
+Success (1 rows, 0.008 sec)
+  2768
+================================================================================
+[L0_0030] What is the westernmost longitude of schools in Texas (identified by STATEFP = '48')?
+--------------------------------------------------------------------------------
+SELECT MIN(LON) AS min_lon FROM schools WHERE STATEFP = '48' AND LON IS NOT NULL;
+
+Success (1 rows, 0.002 sec)
+  -106.62416140199996
+================================================================================
+[L0_0031] How many counties in Florida with valid geometry (STATEFP = '12') have their entire geometry west of longitude -82?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_west_counties FROM county WHERE STATEFP = '12' AND ST_XMax(geometry) < -82 AND ST_IsValid(geometry);
+
+Success (1 rows, 0.114 sec)
+  36
+================================================================================
+[L0_0032] Return the average land area of topologically valid counties in Texas (identified by STATEFP 48).
+--------------------------------------------------------------------------------
+SELECT AVG(ST_Area(geometry)) AS avg_area FROM county WHERE STATEFP = '48' AND ST_IsValid(geometry);
+
+Success (1 rows, 0.061 sec)
+  0.2600587858137559
+================================================================================
+[L0_0033] How many distinct cities have hospitals recorded in Louisiana (STATEFP = '22')?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT CITY) AS num_cities FROM hospitals WHERE STATEFP='22' AND CITY IS NOT NULL;
+
+Success (1 rows, 0.005 sec)
+  99
+================================================================================
+[L0_0034] What is the average population universe for all tracts in Louisiana (identified by GEOID starting with '22')?
+--------------------------------------------------------------------------------
+SELECT AVG(POPUNI) AS average_popuni FROM cre WHERE GEOID LIKE '22%';
+
+Success (1 rows, 0.002 sec)
+  3234.023054755043
+================================================================================
+[L0_0035] Return the number of NFIP claims filed before 1990 in Texas (identified by GEOID starting with 48).
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_old_claims FROM claims WHERE GEOID LIKE '48%' AND dateOfLoss < DATE '1990-01-01';
+
+Success (1 rows, 0.139 sec)
+  73533
+================================================================================
+[L0_0036] What is the total number of unique FEMA Flood Hazard Zone codes in the floodplain table (any type of labels is accepted even if it is invalid or X)?
+--------------------------------------------------------------------------------
+SELECT COUNT(DISTINCT FLD_ZONE) AS num_zones FROM floodplain;
+
+Success (1 rows, 0.006 sec)
+  10
+================================================================================
+[L0_0037] What percentage of Texas census tracts (GEOID starting with '48') are composed completely of water?
+--------------------------------------------------------------------------------
+SELECT 100.0 * COUNT(DISTINCT CASE WHEN WATER_TRACT = 1 THEN GEOID END) / COUNT(DISTINCT GEOID) AS pct_with_water FROM cre WHERE GEOID LIKE '48%';
+
+Success (1 rows, 0.004 sec)
+  0.18851508120649652
+================================================================================
+[L0_0038] What is the northernmost latitude (maximum LAT) of hospitals in Florida (identified by STATEFP = '12')?
+--------------------------------------------------------------------------------
+SELECT MAX(LAT) AS max_lat FROM hospitals WHERE STATEFP = '12' AND LAT IS NOT NULL;
+
+Success (1 rows, 0.002 sec)
+  30.970393840000042
+================================================================================
+[L0_0039] Return the average ratio of non-null building payout to contents payout for NFIP claims in Louisiana (GEOID starting with 22). Only include records where contents payout is positive.
+--------------------------------------------------------------------------------
+SELECT AVG(CAST(amountPaidOnBuildingClaim AS DOUBLE) / CAST(amountPaidOnContentsClaim AS DOUBLE)) AS avg_ratio FROM claims WHERE GEOID LIKE '22%' AND amountPaidOnBuildingClaim IS NOT NULL AND amountPaidOnContentsClaim IS NOT NULL AND CAST(amountPaidOnContentsClaim AS DOUBLE) > 0;
+
+Success (1 rows, 0.181 sec)
+  6.982129213458387
+================================================================================
+[L0_0040] Which census tract in Louisiana (STATEFP = '22') has the smallest geometry area? Return its 11-digit GEOID
+--------------------------------------------------------------------------------
+SELECT GEOID FROM census_tracts WHERE STATEFP = '22' ORDER BY ST_Area(geometry) ASC LIMIT 1;
+
+Success (1 rows, 0.143 sec)
+  22071001600
+================================================================================
+[L0_0041] Return the average area of topologically valid census tracts across all the three states in the tract table.
+--------------------------------------------------------------------------------
+SELECT AVG(ST_Area(geometry)) AS avg_area FROM census_tracts WHERE ST_IsValid(geometry);
+
+Success (1 rows, 0.214 sec)
+  0.007133059974340702
+================================================================================
+[L0_0042] What is the average non-null estimated total population for Texas (GEOID starting with 48) across SVI tracts for each state?
+--------------------------------------------------------------------------------
+SELECT AVG(CAST(E_TOTPOP AS DOUBLE)) AS avg_pop FROM svi WHERE GEOID LIKE '48%' AND E_TOTPOP IS NOT NULL;
+
+Success (1 rows, 0.004 sec)
+  4248.015979081929
+================================================================================
+[L0_0043] Return the total area of all topologically valid floodplain polygons in Texas (identified by STATEFP 48).
+--------------------------------------------------------------------------------
+SELECT SUM(ST_Area(geometry)) AS total_area FROM floodplain WHERE STATEFP = '48' AND ST_IsValid(geometry);
+
+Success (1 rows, 2.660 sec)
+  30.507730887912004
+================================================================================
+[L0_0044] What is the number of schools with missing (null) coordinates in Louisiana (identified by STATEFP 22)?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_missing FROM schools WHERE STATEFP = '22' AND (LAT IS NULL OR LON IS NULL);
+
+Success (1 rows, 0.006 sec)
+  0
+================================================================================
+[L0_0045] What is the average non-null coastal flood risk score in Florida (identified by GEOID starting with 12)?
+--------------------------------------------------------------------------------
+SELECT AVG(CFLD_RISKS) AS avg_coastal_risk FROM nri WHERE GEOID LIKE '12%' AND CFLD_RISKS IS NOT NULL;
+
+Success (1 rows, 0.020 sec)
+  46.48883877774816
+================================================================================
+[L0_0046] Which state (identified by STATEFP) contains the largest number of topologically valid FEMA floodplain polygons overall? Return its STATEFP code.
+--------------------------------------------------------------------------------
+SELECT STATEFP FROM floodplain WHERE ST_IsValid(geometry) GROUP BY STATEFP ORDER BY COUNT(*) DESC LIMIT 1;
+
+Success (1 rows, 3.129 sec)
+  12
+================================================================================
+[L0_0047] How many NFIP claims in Louisiana (identified by GEOID starting with 22) with missing dateOfLoss values?
+--------------------------------------------------------------------------------
+SELECT COUNT(*) AS num_missing_date FROM claims WHERE GEOID LIKE '22%' AND dateOfLoss IS NULL;
+
+Success (1 rows, 0.088 sec)
+  0
+================================================================================
+[L0_0048] Return the average non-null percentage of individuals with one or two components of social vulnerability across all tracts in Florida (identified by GEOID starting with 12).
+--------------------------------------------------------------------------------
+SELECT AVG(PRED12_PE) AS avg_pred12_pe FROM cre WHERE GEOID LIKE '12%' AND PRED12_PE IS NOT NULL;
+
+Success (1 rows, 0.041 sec)
+  46.18204069767448
+================================================================================
+[L0_0049] Which city across all states has the largest number of colleges recorded in the schools table? Return its city name in uppercase.
+--------------------------------------------------------------------------------
+SELECT CITY FROM schools WHERE TYPE = 'COLLEGE' GROUP BY CITY ORDER BY COUNT(*) DESC LIMIT 1;
+
+Success (1 rows, 0.017 sec)
+  HOUSTON
+================================================================================
+[L0_0050] What is the average non-null NFIP building payout across all claims in all three states?
+--------------------------------------------------------------------------------
+SELECT AVG(CAST(amountPaidOnBuildingClaim AS DOUBLE)) AS avg_payout FROM claims WHERE amountPaidOnBuildingClaim IS NOT NULL;
+
+Success (1 rows, 0.258 sec)
+  44330.971228179544
