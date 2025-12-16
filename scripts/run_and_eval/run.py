@@ -31,7 +31,7 @@ args = parser.parse_args()
 # CONFIG
 # =========================================================
 # (MODIFIED) merged benchmark file
-#INPUT_JSON = "benchmark/benchmark.jsonl"
+#INPUT_JSON = "benchmark/bechmark_updated.jsonl"
 INPUT_JSON = "benchmark/triple_table_key_spatial_updated/50_results.jsonl"
 
 OUTPUT_JSONL = args.output_jsonl
